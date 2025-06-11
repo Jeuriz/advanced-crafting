@@ -111,18 +111,8 @@ Config.Stations = {
         -- Ubicaciones
         locations = {
             {
-                coords = vector3(1973.85, 3815.26, 33.44),
+                coords = vector3(1689.17, 4839.35, 44.91),
                 heading = 0.0,
-                radius = 2.0,
-            },
-            {
-                coords = vector3(-1196.45, -893.44, 13.89), -- Vespucci Beach
-                heading = 180.0,
-                radius = 2.0,
-            },
-            {
-                coords = vector3(1687.99, 4815.89, 42.01), -- Grapeseed
-                heading = 90.0,
                 radius = 2.0,
             }
         },
@@ -151,117 +141,6 @@ Config.Stations = {
                 name = "fire_wrecked_plane_cockpit",
                 offset = vector3(0.0, 0.0, 0.5),
                 scale = 1.0,
-            }
-        }
-    },
-    
-    ['purificacion'] = {
-        label = 'Purificador de Agua',
-        description = 'Convierte agua contaminada en agua potable',
-        icon = 'fas fa-tint',
-        color = 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)',
-        
-        locations = {
-            {
-                coords = vector3(1975.23, 3820.12, 33.44),
-                heading = 90.0,
-                radius = 2.0,
-            },
-            {
-                coords = vector3(-1198.67, -895.78, 13.89), -- Vespucci Beach
-                heading = 180.0,
-                radius = 2.0,
-            }
-        },
-        
-        settings = {
-            model = `prop_watercooler`,
-            requiredItem = nil,
-            requiredJob = nil,
-            requiredGang = nil,
-            minLevel = 1,
-            showBlip = true,
-            blipSprite = 480,
-            blipColor = 3,
-            
-            animation = {
-                dict = "mp_common",
-                anim = "givetake2_a",
-                flag = 1,
-            }
-        }
-    },
-    
-    ['alquimia'] = {
-        label = 'Mesa de Alquimia',
-        description = 'Crea pociones y estimulantes avanzados',
-        icon = 'fas fa-flask',
-        color = 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
-        
-        locations = {
-            {
-                coords = vector3(1970.44, 3817.88, 33.44),
-                heading = 270.0,
-                radius = 2.0,
-            },
-            {
-                coords = vector3(-1201.23, -898.45, 13.89), -- Vespucci Beach
-                heading = 0.0,
-                radius = 2.0,
-            }
-        },
-        
-        settings = {
-            model = `bkr_prop_meth_table01a`,
-            requiredItem = 'chemistry_kit',
-            requiredJob = nil,
-            requiredGang = nil,
-            minLevel = 5,
-            showBlip = true,
-            blipSprite = 499,
-            blipColor = 27,
-            
-            animation = {
-                dict = "mp_suicide",
-                anim = "pill_fp",
-                flag = 1,
-            }
-        }
-    },
-    
-    ['herramientas'] = {
-        label = 'Banco de Trabajo',
-        description = 'Fabrica herramientas y equipos especializados',
-        icon = 'fas fa-hammer',
-        color = 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
-        
-        locations = {
-            {
-                coords = vector3(1968.12, 3812.99, 33.44),
-                heading = 45.0,
-                radius = 2.0,
-            },
-            {
-                coords = vector3(-1203.89, -901.12, 13.89), -- Vespucci Beach
-                heading = 90.0,
-                radius = 2.0,
-            }
-        },
-        
-        settings = {
-            model = `prop_tool_bench02`,
-            requiredItem = nil,
-            requiredJob = {'mechanic'},
-            requiredGang = nil,
-            minLevel = 3,
-            showBlip = true,
-            blipSprite = 446,
-            blipColor = 0,
-            
-            animation = {
-                dict = "mp_common",
-                anim = "givetake2_a",
-                flag = 1,
             }
         }
     }
@@ -299,13 +178,13 @@ Config.Recipes = {
             
             -- Requisitos
             requiredItems = {
-                ['meat_raw'] = 1,
-                ['charcoal'] = 1
+                ['thick_fabric'] = 1,
+                ['solid_metal_piece'] = 1
             },
             
             -- Resultado
             result = {
-                item = 'meat_cooked',
+                item = 'sealed_parts',
                 quantity = 1,
                 metadata = {
                     quality = 'good',
