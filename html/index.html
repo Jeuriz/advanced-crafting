@@ -1,1 +1,92 @@
 
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Crafting - QBCore</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div id="crafting-container" class="hidden">
+        <div id="notification" class="notification hidden">
+            <i class="notification-icon"></i>
+            <span class="notification-text"></span>
+        </div>
+
+        <div class="crafting-window">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-content">
+                    <div class="header-info">
+                        <div class="header-icon">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <div class="header-text">
+                            <h1>Sistema de Crafting Avanzado</h1>
+                            <p>Survival Crafting System v2.1</p>
+                        </div>
+                    </div>
+                    <button id="close-btn" class="close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <!-- Sidebar -->
+                <div class="sidebar">
+                    <h3 class="sidebar-title">Estaciones</h3>
+                    <div class="stations-list" id="stations-list">
+                        <!-- Estaciones se generan dinámicamente -->
+                    </div>
+
+                    <!-- Inventario -->
+                    <div class="inventory-section">
+                        <h3 class="sidebar-title">Inventario</h3>
+                        <div class="inventory-grid" id="inventory-grid">
+                            <!-- Items del inventario se generan dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel Principal -->
+                <div class="main-panel">
+                    <div class="station-header" id="station-header">
+                        <div class="station-icon-container">
+                            <i class="station-icon" id="station-icon"></i>
+                        </div>
+                        <div class="station-info">
+                            <h2 id="station-name">Selecciona una Estación</h2>
+                            <p id="station-description">Elige una estación para comenzar</p>
+                        </div>
+                    </div>
+
+                    <!-- Progreso de Crafting -->
+                    <div id="crafting-progress" class="crafting-progress hidden">
+                        <div class="progress-info">
+                            <i class="fas fa-clock progress-icon"></i>
+                            <div class="progress-text">
+                                <span class="progress-title">Fabricando: <span id="crafting-item-name"></span></span>
+                                <div class="progress-time">Tiempo restante: <span id="time-remaining"></span>s</div>
+                            </div>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="progress-bar"></div>
+                        </div>
+                        <div class="progress-percentage" id="progress-percentage">0%</div>
+                    </div>
+
+                    <!-- Recetas -->
+                    <div class="recipes-container" id="recipes-container">
+                        <!-- Recetas se generan dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
