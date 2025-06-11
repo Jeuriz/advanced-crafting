@@ -1,7 +1,5 @@
-
-
 -- ================================
--- CONFIGURACIÓN SISTEMA DE CRAFTING
+-- CONFIGURACIÓN SISTEMA DE CRAFTING (CORREGIDO)
 -- Compatible con QBCore + tgiann inventory + ox_target
 -- ================================
 
@@ -55,16 +53,16 @@ Config.Limits = {
     
     -- Límites por item (por día)
     DailyLimits = {
-        ['health_potion'] = 5,         -- 5 pociones de salud por día
-        ['stimulant'] = 3,             -- 3 estimulantes por día
-        ['water_filter_advanced'] = 2, -- 2 filtros avanzados por día
+        ['pocion_salud'] = 5,         -- 5 pociones de salud por día
+        ['estimulante'] = 3,             -- 3 estimulantes por día
+        ['filtro_mejorado'] = 2, -- 2 filtros avanzados por día
     },
     
     -- Límites por nivel
     LevelRequirements = {
-        ['health_potion'] = 10,        -- Requiere nivel 10
-        ['stimulant'] = 15,            -- Requiere nivel 15
-        ['water_filter_advanced'] = 20, -- Requiere nivel 20
+        ['pocion_salud'] = 10,        -- Requiere nivel 10
+        ['estimulante'] = 15,            -- Requiere nivel 15
+        ['filtro_mejorado'] = 20, -- Requiere nivel 20
     }
 }
 
@@ -478,7 +476,79 @@ Config.Recipes = {
         }
     },
     
-  
+    ['alquimia'] = {
+        {
+            id = 'pocion_salud',
+            name = 'Poción de Salud',
+            description = 'Restaura salud instantáneamente',
+            
+            requiredItems = {
+                ['herbs'] = 3,
+                ['water_distilled'] = 1
+            },
+            
+            result = {
+                item = 'health_potion',
+                quantity = 1,
+                metadata = {
+                    potency = 'high',
+                    expiry = 720, -- 30 días
+                    healing_power = 100
+                }
+            },
+            
+            settings = {
+                craftTime = 18000,
+                experience = 30,
+                difficulty = 3,
+                successRate = 0.85,
+                extraItemChance = 0.05,
+                
+                effects = {
+                    '+100 Salud',
+                    'Regeneración 30s',
+                    'Cura envenenamiento'
+                }
+            }
+        },
+        
+        {
+            id = 'estimulante',
+            name = 'Estimulante de Combate',
+            description = 'Aumenta capacidades físicas temporalmente',
+            
+            requiredItems = {
+                ['herbs'] = 2,
+                ['meat_cooked'] = 1,
+                ['water_clean'] = 1
+            },
+            
+            result = {
+                item = 'stimulant',
+                quantity = 1,
+                metadata = {
+                    duration = 300, -- 5 minutos
+                    strength_boost = 25,
+                    speed_boost = 25
+                }
+            },
+            
+            settings = {
+                craftTime = 14000,
+                experience = 25,
+                difficulty = 2,
+                successRate = 0.88,
+                extraItemChance = 0.08,
+                
+                effects = {
+                    '+50 Energía',
+                    '+25% Velocidad 5min',
+                    '+15% Fuerza 5min'
+                }
+            }
+        }
+    },
+    
     ['herramientas'] = {
         {
             id = 'filtro_mejorado',
