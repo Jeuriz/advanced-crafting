@@ -6,14 +6,6 @@ author 'TuNombre'
 version '2.1.0'
 description 'Sistema avanzado de crafting para QBCore con soporte para tgiann inventory'
 
--- Dependencias
-dependencies {
-    'qb-core',
-    'ox_target',
-    'tgiann-inventory',
-    'oxmysql'
-}
-
 -- Configuración compartida
 shared_scripts {
     'config.lua'
@@ -42,9 +34,4 @@ files {
 -- Configuración de versión de Lua
 lua54 'yes'
 
--- Configuración adicional
-escrow_ignore {
-    'client.lua',
-    'server.lua',
-    'html/**/*'
-}
+
