@@ -1,5 +1,5 @@
 -- ================================
--- CONFIGURACIÓN SISTEMA DE CRAFTING (CORREGIDO)
+-- CONFIGURACIÓN SISTEMA DE CRAFTING MINIMALISTA
 -- Compatible con QBCore + tgiann inventory + ox_target
 -- ================================
 
@@ -48,126 +48,110 @@ Config.Experience = {
 
 -- ===== LÍMITES DE CRAFTING =====
 Config.Limits = {
-    EnableDailyLimits = true,          -- Activar límites diarios
+    EnableDailyLimits = false,          -- Activar límites diarios
     ResetTime = 6,                     -- Hora de reset (6 AM)
     
     -- Límites por item (por día)
     DailyLimits = {
-        ['pocion_salud'] = 5,         -- 5 pociones de salud por día
-        ['estimulante'] = 3,             -- 3 estimulantes por día
-        ['filtro_mejorado'] = 2, -- 2 filtros avanzados por día
+        ['health_potion'] = 5,         -- 5 pociones de salud por día
+        ['stimulant'] = 3,             -- 3 estimulantes por día
+        ['water_filter_advanced'] = 2, -- 2 filtros avanzados por día
     },
     
     -- Límites por nivel
     LevelRequirements = {
-        ['pocion_salud'] = 10,        -- Requiere nivel 10
-        ['estimulante'] = 15,            -- Requiere nivel 15
-        ['filtro_mejorado'] = 20, -- Requiere nivel 20
+        ['health_potion'] = 10,        -- Requiere nivel 10
+        ['stimulant'] = 15,            -- Requiere nivel 15
+        ['water_filter_advanced'] = 20, -- Requiere nivel 20
     }
 }
 
 -- ===== NOMBRES DE ITEMS PARA LA UI =====
 Config.ItemNames = {
-    -- Items base
-    ['agua_sucia'] = 'Agua Contaminada',
-    ['water_dirty'] = 'Agua Contaminada',
-    ['carne_cruda'] = 'Carne Cruda',
+    -- Items base comunes
+    ['water_dirty'] = 'Agua Sucia',
     ['meat_raw'] = 'Carne Cruda',
-    ['vegetales'] = 'Vegetales Frescos',
-    ['vegetables'] = 'Vegetales Frescos',
-    ['hierbas'] = 'Hierbas Medicinales',
-    ['herbs'] = 'Hierbas Medicinales',
-    ['carbon'] = 'Carbón Vegetal',
-    ['charcoal'] = 'Carbón Vegetal',
-    ['metal_chatarra'] = 'Chatarra Metálica',
-    ['metalscrap'] = 'Chatarra Metálica',
-    ['filtro_improvised'] = 'Filtro Improvisado',
-    ['water_filter'] = 'Filtro Improvisado',
+    ['vegetables'] = 'Vegetales',
+    ['herbs'] = 'Hierbas',
+    ['charcoal'] = 'Carbón',
+    ['metalscrap'] = 'Chatarra',
+    ['water_filter'] = 'Filtro Básico',
     ['thick_fabric'] = 'Tela Gruesa',
-    ['solid_metal_piece'] = 'Pieza de Metal Sólido',
+    ['solid_metal_piece'] = 'Metal Sólido',
+    ['plastic'] = 'Plástico',
+    ['electronics'] = 'Electrónicos',
+    ['glass'] = 'Vidrio',
+    ['wood'] = 'Madera',
+    ['stone'] = 'Piedra',
+    ['oil'] = 'Aceite',
     
-    -- Items crafteados
-    ['carne_cocida'] = 'Carne Cocida',
+    -- Items crafteados básicos
     ['meat_cooked'] = 'Carne Cocida',
-    ['agua_limpia'] = 'Agua Purificada',
-    ['water_clean'] = 'Agua Purificada',
-    ['agua_destilada'] = 'Agua Destilada',
+    ['water_clean'] = 'Agua Limpia',
+    ['bread'] = 'Pan',
+    ['soup'] = 'Sopa',
+    ['bandage'] = 'Vendaje',
+    ['rope'] = 'Cuerda',
+    ['knife'] = 'Cuchillo',
+    ['torch'] = 'Antorcha',
+    ['rubber_strips'] = 'Tiras de Goma',
+    
+    -- Items avanzados
     ['water_distilled'] = 'Agua Destilada',
-    ['estofado'] = 'Estofado Nutritivo',
-    ['stew'] = 'Estofado Nutritivo',
-    ['sopa_hierbas'] = 'Sopa de Hierbas',
-    ['herb_soup'] = 'Sopa de Hierbas',
-    ['pocion_salud'] = 'Poción de Salud',
     ['health_potion'] = 'Poción de Salud',
-    ['estimulante'] = 'Estimulante de Combate',
-    ['stimulant'] = 'Estimulante de Combate',
-    ['filtro_mejorado'] = 'Filtro Avanzado',
+    ['stimulant'] = 'Estimulante',
     ['water_filter_advanced'] = 'Filtro Avanzado',
-    ['sealed_parts'] = 'Partes Selladas'
+    ['first_aid_kit'] = 'Kit de Primeros Auxilios',
+    ['energy_drink'] = 'Bebida Energética',
+    ['weapon_parts'] = 'Partes de Arma',
+    ['armor_vest'] = 'Chaleco Antibalas',
+    ['night_vision'] = 'Visión Nocturna',
+    ['lockpick_advanced'] = 'Ganzúa Avanzada'
 }
 
 -- ===== RAREZA DE ITEMS PARA LA UI =====
 Config.ItemRarity = {
-    -- Items base - Common
-    ['agua_sucia'] = 'common',
+    -- Items comunes (gris)
     ['water_dirty'] = 'common',
-    ['carne_cruda'] = 'common',
     ['meat_raw'] = 'common',
-    ['vegetales'] = 'common',
     ['vegetables'] = 'common',
-    ['carbon'] = 'common',
     ['charcoal'] = 'common',
     ['thick_fabric'] = 'common',
+    ['plastic'] = 'common',
+    ['wood'] = 'common',
+    ['stone'] = 'common',
+    ['glass'] = 'common',
     
-    -- Items uncommon
-    ['hierbas'] = 'uncommon',
+    -- Items poco comunes (verde)
     ['herbs'] = 'uncommon',
-    ['metal_chatarra'] = 'uncommon',
     ['metalscrap'] = 'uncommon',
-    ['filtro_improvised'] = 'uncommon',
     ['water_filter'] = 'uncommon',
-    ['carne_cocida'] = 'uncommon',
-    ['meat_cooked'] = 'uncommon',
-    ['agua_limpia'] = 'uncommon',
-    ['water_clean'] = 'uncommon',
     ['solid_metal_piece'] = 'uncommon',
+    ['electronics'] = 'uncommon',
+    ['oil'] = 'uncommon',
+    ['meat_cooked'] = 'uncommon',
+    ['water_clean'] = 'uncommon',
+    ['bread'] = 'uncommon',
+    ['bandage'] = 'uncommon',
+    ['rope'] = 'uncommon',
+    ['knife'] = 'uncommon',
+    ['torch'] = 'uncommon',
     
-    -- Items rare
-    ['agua_destilada'] = 'rare',
+    -- Items raros (azul)
     ['water_distilled'] = 'rare',
-    ['estofado'] = 'rare',
-    ['stew'] = 'rare',
-    ['sopa_hierbas'] = 'rare',
-    ['herb_soup'] = 'rare',
-    ['estimulante'] = 'rare',
-    ['stimulant'] = 'rare',
-    ['sealed_parts'] = 'rare',
+    ['soup'] = 'rare',
+    ['rubber_strips'] = 'rare',
+    ['first_aid_kit'] = 'rare',
+    ['energy_drink'] = 'rare',
+    ['weapon_parts'] = 'rare',
+    ['lockpick_advanced'] = 'rare',
     
-    -- Items epic
-    ['pocion_salud'] = 'epic',
+    -- Items épicos (morado)
     ['health_potion'] = 'epic',
-    ['filtro_mejorado'] = 'epic',
-    ['water_filter_advanced'] = 'epic'
-}
-
--- ===== CONFIGURACIÓN DE LOGS =====
-Config.Logging = {
-    Enabled = true,                    -- Activar logging
-    LogToDatabase = true,              -- Guardar en base de datos
-    LogToFile = false,                 -- Guardar en archivo
-    LogToDiscord = false,              -- Enviar a Discord
-    DiscordWebhook = "",               -- URL del webhook
-    LogLevel = "INFO",                 -- Nivel de log (DEBUG, INFO, WARN, ERROR)
-    RetentionDays = 30,                -- Días para mantener logs
-    
-    -- Eventos a loggear
-    Events = {
-        CraftingStarted = true,
-        CraftingCompleted = true,
-        CraftingCancelled = true,
-        LevelUp = true,
-        AdminCommands = true,
-    }
+    ['stimulant'] = 'epic',
+    ['water_filter_advanced'] = 'epic',
+    ['armor_vest'] = 'epic',
+    ['night_vision'] = 'epic'
 }
 
 -- ===== CONFIGURACIÓN DE UI =====
@@ -187,21 +171,24 @@ Config.UI = {
 -- ===== ESTACIONES DE CRAFTING =====
 Config.Stations = {
     ['cocina'] = {
-        label = 'Cocina de Supervivencia',
-        description = 'Prepara alimentos nutritivos y sabrosos',
+        label = 'Cocina',
+        description = 'Preparar comidas y bebidas',
         icon = 'fas fa-fire',
         color = 'linear-gradient(135deg, #f97316 0%, #dc2626 100%)',
         
-        -- Ubicaciones
         locations = {
             {
-                coords = vector3(1689.17, 4839.35, 44.91),
+                coords = vector3(-1196.82, -890.79, 13.99), -- Apartamento de Franklin
+                heading = 0.0,
+                radius = 2.0,
+            },
+            {
+                coords = vector3(1689.17, 4839.35, 44.91), -- Sandy Shores
                 heading = 0.0,
                 radius = 2.0,
             }
         },
         
-        -- Configuración
         settings = {
             model = `prop_bbq_5`,
             requiredItem = nil,
@@ -212,123 +199,86 @@ Config.Stations = {
             blipSprite = 479,
             blipColor = 1,
             
-            -- Animación durante crafting
             animation = {
                 dict = "amb@prop_human_bbq@male@idle_a",
                 anim = "idle_b",
                 flag = 1,
-            },
-            
-            -- Efectos de partículas (opcional)
-            particles = {
-                dict = "core",
-                name = "fire_wrecked_plane_cockpit",
-                offset = vector3(0.0, 0.0, 0.5),
-                scale = 1.0,
             }
         }
-    },
+    }
 }
 
 -- ===== MAPEO DE ITEMS =====
 Config.ItemMapping = {
-    -- Items base del framework -> Items del sistema de crafting
-    ['water_dirty'] = 'agua_sucia',
-    ['meat_raw'] = 'carne_cruda',
-    ['vegetables'] = 'vegetales',
-    ['herbs'] = 'hierbas',
-    ['charcoal'] = 'carbon',
-    ['metalscrap'] = 'metal_chatarra',
-    ['water_filter'] = 'filtro_improvised',
-    
-    -- Items crafteados
-    ['meat_cooked'] = 'carne_cocida',
-    ['water_clean'] = 'agua_limpia',
-    ['water_distilled'] = 'agua_destilada',
-    ['stew'] = 'estofado',
-    ['herb_soup'] = 'sopa_hierbas',
-    ['health_potion'] = 'pocion_salud',
-    ['stimulant'] = 'estimulante',
-    ['water_filter_advanced'] = 'filtro_mejorado'
+    -- Mapeo estándar QBCore -> Sistema interno
+    ['water'] = 'water_dirty',
+    ['sandwich'] = 'bread',
+    ['tosti'] = 'bread'
 }
 
 -- ===== RECETAS DE CRAFTING =====
 Config.Recipes = {
     ['cocina'] = {
         {
-            id = 'carne_cocida',
+            id = 'meat_cooked',
             name = 'Carne Cocida',
-            description = 'Carne bien cocinada que restaura energía',
+            description = 'Carne bien preparada',
             
-            -- Requisitos
             requiredItems = {
-                ['sealed_parts'] = 1,
+                ['thick_fabric'] = 1,
                 ['solid_metal_piece'] = 1
             },
             
-            -- Resultado
             result = {
-                item = 'rubber_strips',
+                item = 'sealed_parts',
                 quantity = 1,
-                metadata = {
-                    quality = 'good',
-                    expiry = 72 -- Horas antes de expirar
-                }
+                metadata = {}
             },
             
-            -- Configuración
             settings = {
-                craftTime = 10000,      -- 10 segundos
-                experience = 10,
+                craftTime = 8000,
+                experience = 5,
                 difficulty = 1,
-                consumeTools = false,
+                successRate = 0.95,
+                extraItemChance = 0.05,
+                loseItemsOnFail = false,
                 
-                -- Chance de items extra o fallo
-                successRate = 0.95,     -- 95% de éxito
-                extraItemChance = 0.1,  -- 10% chance de item extra
-                loseItemsOnFail = true, -- Perder items si falla
-                
-                -- Efectos
                 effects = {
                     '+50 Hambre',
-                    '+10 Salud',
-                    '+5 Energía'
+                    '+10 Salud'
                 }
             }
-        }
-        
-    
+        },
     }
 }
 
 -- ===== CONFIGURACIÓN DE NOTIFICACIONES =====
 Config.Notifications = {
-    Type = 'qb', -- qb, ox, custom
-    Duration = 5000, -- Duración en ms
+    Type = 'qb',
+    Duration = 4000,
     
-    -- Mensajes personalizables
     Messages = {
         -- Éxito
         CraftingComplete = 'Has creado %s exitosamente!',
         LevelUp = '¡Has subido al nivel %d de crafting!',
         ExperienceGained = 'Has ganado %d puntos de experiencia',
-        BonusItem = '¡Has obtenido un item extra gracias a tu habilidad!',
-        ImprovedQuality = '¡Has creado una versión mejorada del item!',
+        BonusItem = '¡Has obtenido un item extra!',
+        ImprovedQuality = '¡Has creado una versión mejorada!',
         
         -- Error
         NotEnoughItems = 'No tienes suficiente %s (%d/%d)',
-        CraftingFailed = 'El crafting ha fallado. Has perdido algunos materiales.',
-        DailyLimitReached = 'Has alcanzado el límite diario de %d para este item',
-        LevelRequired = 'Necesitas nivel %d para crear este item',
-        JobRequired = 'Necesitas el trabajo %s para usar esta estación',
-        ItemRequired = 'Necesitas %s para usar esta estación',
-        TooFarAway = 'Estás muy lejos de la estación de crafting',
+        CraftingFailed = 'El crafting falló. Perdiste algunos materiales.',
+        DailyLimitReached = 'Límite diario alcanzado (%d)',
+        LevelRequired = 'Necesitas nivel %d para crear esto',
+        JobRequired = 'Necesitas el trabajo %s',
+        ItemRequired = 'Necesitas %s',
+        TooFarAway = 'Estás muy lejos de la estación',
         AlreadyCrafting = 'Ya estás crafteando algo',
         
         -- Info
         CraftingStarted = 'Comenzando a crear %s...',
         CraftingCancelled = 'Crafting cancelado',
-        CraftingInProgress = 'Crafting en progreso... %d%% completado',
+        CraftingInProgress = 'Crafting... %d%% completado',
     }
 }
 
