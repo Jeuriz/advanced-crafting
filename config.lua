@@ -66,6 +66,90 @@ Config.Limits = {
     }
 }
 
+-- ===== NOMBRES DE ITEMS PARA LA UI =====
+Config.ItemNames = {
+    -- Items base
+    ['agua_sucia'] = 'Agua Contaminada',
+    ['water_dirty'] = 'Agua Contaminada',
+    ['carne_cruda'] = 'Carne Cruda',
+    ['meat_raw'] = 'Carne Cruda',
+    ['vegetales'] = 'Vegetales Frescos',
+    ['vegetables'] = 'Vegetales Frescos',
+    ['hierbas'] = 'Hierbas Medicinales',
+    ['herbs'] = 'Hierbas Medicinales',
+    ['carbon'] = 'Carbón Vegetal',
+    ['charcoal'] = 'Carbón Vegetal',
+    ['metal_chatarra'] = 'Chatarra Metálica',
+    ['metalscrap'] = 'Chatarra Metálica',
+    ['filtro_improvised'] = 'Filtro Improvisado',
+    ['water_filter'] = 'Filtro Improvisado',
+    ['thick_fabric'] = 'Tela Gruesa',
+    ['solid_metal_piece'] = 'Pieza de Metal Sólido',
+    
+    -- Items crafteados
+    ['carne_cocida'] = 'Carne Cocida',
+    ['meat_cooked'] = 'Carne Cocida',
+    ['agua_limpia'] = 'Agua Purificada',
+    ['water_clean'] = 'Agua Purificada',
+    ['agua_destilada'] = 'Agua Destilada',
+    ['water_distilled'] = 'Agua Destilada',
+    ['estofado'] = 'Estofado Nutritivo',
+    ['stew'] = 'Estofado Nutritivo',
+    ['sopa_hierbas'] = 'Sopa de Hierbas',
+    ['herb_soup'] = 'Sopa de Hierbas',
+    ['pocion_salud'] = 'Poción de Salud',
+    ['health_potion'] = 'Poción de Salud',
+    ['estimulante'] = 'Estimulante de Combate',
+    ['stimulant'] = 'Estimulante de Combate',
+    ['filtro_mejorado'] = 'Filtro Avanzado',
+    ['water_filter_advanced'] = 'Filtro Avanzado',
+    ['sealed_parts'] = 'Partes Selladas'
+}
+
+-- ===== RAREZA DE ITEMS PARA LA UI =====
+Config.ItemRarity = {
+    -- Items base - Common
+    ['agua_sucia'] = 'common',
+    ['water_dirty'] = 'common',
+    ['carne_cruda'] = 'common',
+    ['meat_raw'] = 'common',
+    ['vegetales'] = 'common',
+    ['vegetables'] = 'common',
+    ['carbon'] = 'common',
+    ['charcoal'] = 'common',
+    ['thick_fabric'] = 'common',
+    
+    -- Items uncommon
+    ['hierbas'] = 'uncommon',
+    ['herbs'] = 'uncommon',
+    ['metal_chatarra'] = 'uncommon',
+    ['metalscrap'] = 'uncommon',
+    ['filtro_improvised'] = 'uncommon',
+    ['water_filter'] = 'uncommon',
+    ['carne_cocida'] = 'uncommon',
+    ['meat_cooked'] = 'uncommon',
+    ['agua_limpia'] = 'uncommon',
+    ['water_clean'] = 'uncommon',
+    ['solid_metal_piece'] = 'uncommon',
+    
+    -- Items rare
+    ['agua_destilada'] = 'rare',
+    ['water_distilled'] = 'rare',
+    ['estofado'] = 'rare',
+    ['stew'] = 'rare',
+    ['sopa_hierbas'] = 'rare',
+    ['herb_soup'] = 'rare',
+    ['estimulante'] = 'rare',
+    ['stimulant'] = 'rare',
+    ['sealed_parts'] = 'rare',
+    
+    -- Items epic
+    ['pocion_salud'] = 'epic',
+    ['health_potion'] = 'epic',
+    ['filtro_mejorado'] = 'epic',
+    ['water_filter_advanced'] = 'epic'
+}
+
 -- ===== CONFIGURACIÓN DE LOGS =====
 Config.Logging = {
     Enabled = true,                    -- Activar logging
@@ -143,7 +227,7 @@ Config.Stations = {
                 scale = 1.0,
             }
         }
-    }
+    },
 }
 
 -- ===== MAPEO DE ITEMS =====
@@ -178,13 +262,13 @@ Config.Recipes = {
             
             -- Requisitos
             requiredItems = {
-                ['thick_fabric'] = 1,
+                ['sealed_parts'] = 1,
                 ['solid_metal_piece'] = 1
             },
             
             -- Resultado
             result = {
-                item = 'sealed_parts',
+                item = 'rubber_strips',
                 quantity = 1,
                 metadata = {
                     quality = 'good',
@@ -211,259 +295,9 @@ Config.Recipes = {
                     '+5 Energía'
                 }
             }
-        },
-        
-        {
-            id = 'estofado',
-            name = 'Estofado Nutritivo',
-            description = 'Comida completa que satisface completamente',
-            
-            requiredItems = {
-                ['meat_raw'] = 2,
-                ['vegetables'] = 2,
-                ['herbs'] = 1
-            },
-            
-            result = {
-                item = 'stew',
-                quantity = 1,
-                metadata = {
-                    quality = 'excellent',
-                    expiry = 48
-                }
-            },
-            
-            settings = {
-                craftTime = 15000,
-                experience = 25,
-                difficulty = 2,
-                successRate = 0.90,
-                extraItemChance = 0.15,
-                
-                effects = {
-                    '+80 Hambre',
-                    '+20 Salud',
-                    '+15 Energía',
-                    '+5 Hidratación'
-                }
-            }
-        },
-        
-        {
-            id = 'sopa_hierbas',
-            name = 'Sopa de Hierbas',
-            description = 'Sopa medicinal con propiedades curativas',
-            
-            requiredItems = {
-                ['herbs'] = 3,
-                ['vegetables'] = 1,
-                ['water_clean'] = 1
-            },
-            
-            result = {
-                item = 'herb_soup',
-                quantity = 1,
-                metadata = {
-                    quality = 'premium',
-                    healing = true,
-                    expiry = 24
-                }
-            },
-            
-            settings = {
-                craftTime = 12000,
-                experience = 20,
-                difficulty = 2,
-                successRate = 0.92,
-                extraItemChance = 0.12,
-                
-                effects = {
-                    '+30 Hambre',
-                    '+25 Salud',
-                    'Regeneración 60s'
-                }
-            }
         }
-    },
+        
     
-    ['purificacion'] = {
-        {
-            id = 'agua_limpia',
-            name = 'Agua Purificada',
-            description = 'Agua segura para consumo humano',
-            
-            requiredItems = {
-                ['water_dirty'] = 3,
-                ['water_filter'] = 1
-            },
-            
-            result = {
-                item = 'water_clean',
-                quantity = 2,
-                metadata = {
-                    purity = 'clean',
-                    expiry = 168 -- 1 semana
-                }
-            },
-            
-            settings = {
-                craftTime = 8000,
-                experience = 5,
-                difficulty = 1,
-                successRate = 0.98,
-                consumeFilter = false, -- No consume el filtro
-                
-                effects = {
-                    '+40 Hidratación',
-                    'Elimina toxinas'
-                }
-            }
-        },
-        
-        {
-            id = 'agua_destilada',
-            name = 'Agua Destilada',
-            description = 'Agua ultra pura para uso médico',
-            
-            requiredItems = {
-                ['water_clean'] = 2,
-                ['charcoal'] = 1
-            },
-            
-            result = {
-                item = 'water_distilled',
-                quantity = 1,
-                metadata = {
-                    purity = 'distilled',
-                    medical_grade = true,
-                    expiry = 336 -- 2 semanas
-                }
-            },
-            
-            settings = {
-                craftTime = 12000,
-                experience = 15,
-                difficulty = 2,
-                successRate = 0.94,
-                
-                effects = {
-                    '+30 Hidratación',
-                    '+10 Salud',
-                    'Pureza 100%'
-                }
-            }
-        }
-    },
-    
-    ['alquimia'] = {
-        {
-            id = 'pocion_salud',
-            name = 'Poción de Salud',
-            description = 'Restaura salud instantáneamente',
-            
-            requiredItems = {
-                ['herbs'] = 3,
-                ['water_distilled'] = 1
-            },
-            
-            result = {
-                item = 'health_potion',
-                quantity = 1,
-                metadata = {
-                    potency = 'high',
-                    expiry = 720, -- 30 días
-                    healing_power = 100
-                }
-            },
-            
-            settings = {
-                craftTime = 18000,
-                experience = 30,
-                difficulty = 3,
-                successRate = 0.85,
-                extraItemChance = 0.05,
-                
-                effects = {
-                    '+100 Salud',
-                    'Regeneración 30s',
-                    'Cura envenenamiento'
-                }
-            }
-        },
-        
-        {
-            id = 'estimulante',
-            name = 'Estimulante de Combate',
-            description = 'Aumenta capacidades físicas temporalmente',
-            
-            requiredItems = {
-                ['herbs'] = 2,
-                ['meat_cooked'] = 1,
-                ['water_clean'] = 1
-            },
-            
-            result = {
-                item = 'stimulant',
-                quantity = 1,
-                metadata = {
-                    duration = 300, -- 5 minutos
-                    strength_boost = 25,
-                    speed_boost = 25
-                }
-            },
-            
-            settings = {
-                craftTime = 14000,
-                experience = 25,
-                difficulty = 2,
-                successRate = 0.88,
-                extraItemChance = 0.08,
-                
-                effects = {
-                    '+50 Energía',
-                    '+25% Velocidad 5min',
-                    '+15% Fuerza 5min'
-                }
-            }
-        }
-    },
-    
-    ['herramientas'] = {
-        {
-            id = 'filtro_mejorado',
-            name = 'Filtro Avanzado',
-            description = 'Filtro de alta eficiencia para purificación',
-            
-            requiredItems = {
-                ['metalscrap'] = 2,
-                ['water_filter'] = 1,
-                ['charcoal'] = 1
-            },
-            
-            result = {
-                item = 'water_filter_advanced',
-                quantity = 1,
-                metadata = {
-                    durability = 100,
-                    efficiency = 'high',
-                    capacity = 50 -- Usos antes de romperse
-                }
-            },
-            
-            settings = {
-                craftTime = 20000,
-                experience = 50,
-                difficulty = 3,
-                successRate = 0.80,
-                extraItemChance = 0.08,
-                
-                effects = {
-                    'Purifica 5x agua',
-                    'Durabilidad +200%',
-                    'Eficiencia +50%'
-                }
-            }
-        }
     }
 }
 
