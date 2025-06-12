@@ -1,5 +1,5 @@
 -- ================================
--- SISTEMA DE CRAFTING - CLIENTE (UI MINIMALISTA)
+-- SISTEMA DE CRAFTING - CLIENTE
 -- Compatible con QBCore + tgiann-inventory + ox_target
 -- ================================
 
@@ -7,7 +7,6 @@ local QBCore = exports['qb-core']:GetCoreObject()
 local isNuiOpen = false
 local currentCraftingData = {}
 local craftingBlips = {}
-local craftingObjects = {}
 
 -- ===== FUNCIONES DE UTILIDAD =====
 local function debugPrint(message)
@@ -17,12 +16,12 @@ local function debugPrint(message)
 end
 
 local function playSound(soundConfig)
-    if Config.UI.PlaySoundEffects and soundConfig then
+    if soundConfig then
         PlaySoundFrontend(-1, soundConfig.name, soundConfig.set, true)
     end
 end
 
--- Función para obtener inventario con tgiann-inventory
+-- Función para obtener inventario
 local function getPlayerInventory()
     local inventory = {}
     
@@ -30,8 +29,7 @@ local function getPlayerInventory()
     if PlayerData.items then
         for _, item in pairs(PlayerData.items) do
             if item and item.name and item.amount > 0 then
-                local mappedName = Config.ItemMapping[item.name] or item.name
-                inventory[mappedName] = (inventory[mappedName] or 0) + item.amount
+                inventory[item.name] = (inventory[item.name] or 0) + item.amount
             end
         end
     end
@@ -95,8 +93,6 @@ local function convertRecipesToUIFormat()
                 result = recipe.result,
                 ingredients = recipe.requiredItems,
                 time = recipe.settings.craftTime,
-                difficulty = recipe.settings.difficulty,
-                effects = recipe.settings.effects or {}
             })
         end
     end
@@ -112,64 +108,11 @@ local function convertStationsToUIFormat()
         uiStations[stationName] = {
             name = stationConfig.label,
             icon = stationConfig.icon,
-            color = stationConfig.color,
             description = stationConfig.description
         }
     end
     
     return uiStations
-end
-
--- Función para verificar permisos de estación
-local function canPlayerUseStation(stationConfig, stationName)
-    local PlayerData = QBCore.Functions.GetPlayerData()
-    
-    if stationConfig.settings.requiredJob then
-        local hasJob = false
-        for _, job in pairs(stationConfig.settings.requiredJob) do
-            if PlayerData.job.name == job then
-                hasJob = true
-                break
-            end
-        end
-        if not hasJob then
-            local jobList = table.concat(stationConfig.settings.requiredJob, ", ")
-            QBCore.Functions.Notify(Config.Notifications.Messages.JobRequired:format(jobList), "error")
-            return false
-        end
-    end
-    
-    if stationConfig.settings.requiredGang and PlayerData.gang then
-        local hasGang = false
-        for _, gang in pairs(stationConfig.settings.requiredGang) do
-            if PlayerData.gang.name == gang then
-                hasGang = true
-                break
-            end
-        end
-        if not hasGang then
-            local gangList = table.concat(stationConfig.settings.requiredGang, ", ")
-            QBCore.Functions.Notify("Necesitas pertenecer a: " .. gangList, "error")
-            return false
-        end
-    end
-    
-    if stationConfig.settings.requiredItem then
-        local hasItem = false
-        for _, item in pairs(PlayerData.items) do
-            if item and item.name == stationConfig.settings.requiredItem and item.amount > 0 then
-                hasItem = true
-                break
-            end
-        end
-        
-        if not hasItem then
-            QBCore.Functions.Notify(Config.Notifications.Messages.ItemRequired:format(stationConfig.settings.requiredItem), "error")
-            return false
-        end
-    end
-    
-    return true
 end
 
 local function createCraftingStations()
@@ -183,21 +126,6 @@ local function createCraftingStations()
             local blip = createStationBlip(coords, stationConfig)
             if blip then
                 table.insert(craftingBlips, blip)
-            end
-            
-            -- Crear objeto si está configurado
-            if stationConfig.settings.model then
-                RequestModel(stationConfig.settings.model)
-                while not HasModelLoaded(stationConfig.settings.model) do
-                    Wait(1)
-                end
-                
-                local obj = CreateObject(stationConfig.settings.model, coords.x, coords.y, coords.z, false, false, false)
-                SetEntityHeading(obj, location.heading or 0.0)
-                FreezeEntityPosition(obj, true)
-                SetEntityInvincible(obj, true)
-                
-                table.insert(craftingObjects, obj)
             end
             
             -- Crear zona de ox_target
@@ -214,12 +142,10 @@ local function createCraftingStations()
                             icon = stationConfig.icon,
                             label = "Usar " .. stationConfig.label,
                             onSelect = function()
-                                if canPlayerUseStation(stationConfig, stationName) then
-                                    TriggerEvent('crafting:openStation', {station = stationName})
-                                end
+                                TriggerEvent('crafting:openStation', {station = stationName})
                             end,
                             canInteract = function()
-                                return not isNuiOpen and not currentCraftingData.recipe
+                                return not isNuiOpen
                             end,
                             distance = Config.Crafting.MaxCraftingDistance
                         }
@@ -242,13 +168,6 @@ local function cleanupStations()
     end
     craftingBlips = {}
     
-    for _, obj in pairs(craftingObjects) do
-        if DoesEntityExist(obj) then
-            DeleteEntity(obj)
-        end
-    end
-    craftingObjects = {}
-    
     if GetResourceState('ox_target') == 'started' then
         for stationName, stationConfig in pairs(Config.Stations) do
             for i, _ in pairs(stationConfig.locations) do
@@ -263,8 +182,6 @@ end
 
 -- ===== FUNCIONES DE CRAFTING =====
 function startCrafting(data)
-    if currentCraftingData.recipe then return end
-    
     local recipeId = data.recipe
     local quantity = data.quantity or 1
     
@@ -309,43 +226,13 @@ function startCrafting(data)
 end
 
 function completeCrafting()
-    if not currentCraftingData.recipe then return end
-    
-    local recipe = currentCraftingData.recipe
-    debugPrint("Completando crafting: " .. recipe.id)
-    
-    -- Verificar si el jugador sigue cerca de la estación
-    local playerCoords = GetEntityCoords(PlayerPedId())
-    local nearStation = false
-    
-    for _, location in pairs(Config.Stations[currentCraftingData.station].locations) do
-        local distance = #(playerCoords - location.coords)
-        if distance <= Config.Crafting.MaxCraftingDistance then
-            nearStation = true
-            break
-        end
-    end
-    
-    if not nearStation then
-        QBCore.Functions.Notify(Config.Notifications.Messages.TooFarAway, "error")
-        cancelCrafting()
-        return
-    end
-    
     TriggerServerEvent('crafting:server:completeCrafting')
 end
 
 function cancelCrafting()
-    if not currentCraftingData.recipe then return end
-    
     debugPrint("Crafting cancelado")
-    
     TriggerServerEvent('crafting:server:cancelCrafting')
-    
     currentCraftingData = {station = currentCraftingData.station}
-    
-    ClearPedTasks(PlayerPedId())
-    
     QBCore.Functions.Notify(Config.Notifications.Messages.CraftingCancelled, "primary")
     
     if isNuiOpen then
@@ -384,8 +271,6 @@ function openCrafting(data)
         config = {
             imagePath = Config.UI.ImagePath,
             imageFormat = Config.UI.ImageFormat,
-            ui = Config.UI,
-            sounds = Config.Sounds
         }
     })
     
@@ -399,30 +284,8 @@ function closeCrafting()
     
     isNuiOpen = false
     SetNuiFocus(false, false)
-    
-    if currentCraftingData.recipe then
-        cancelCrafting()
-    end
-    
     currentCraftingData = {}
     playSound(Config.Sounds.UIClick)
-end
-
--- ===== FUNCIONES PARA AGREGAR/QUITAR ITEMS =====
-function addItemToPlayer(itemName, quantity)
-    SendNUIMessage({
-        action = "addItem",
-        item = itemName,
-        quantity = quantity
-    })
-end
-
-function removeItemFromPlayer(itemName, quantity)
-    SendNUIMessage({
-        action = "removeItem",
-        item = itemName,
-        quantity = quantity
-    })
 end
 
 -- ===== EVENTOS =====
@@ -453,18 +316,6 @@ end)
 
 RegisterNetEvent('crafting:client:startCraftingProcess', function(recipe)
     currentCraftingData.recipe = recipe
-    currentCraftingData.startTime = GetGameTimer()
-    
-    -- Iniciar animación si está configurada
-    local stationConfig = Config.Stations[currentCraftingData.station]
-    if stationConfig and stationConfig.settings.animation then
-        local anim = stationConfig.settings.animation
-        RequestAnimDict(anim.dict)
-        while not HasAnimDictLoaded(anim.dict) do
-            Wait(1)
-        end
-        TaskPlayAnim(PlayerPedId(), anim.dict, anim.anim, 8.0, -8.0, recipe.settings.craftTime, anim.flag, 0, false, false, false)
-    end
     
     playSound(Config.Sounds.CraftingStart)
     
@@ -488,8 +339,6 @@ end)
 RegisterNetEvent('crafting:client:craftingSuccess', function(message)
     currentCraftingData = {station = currentCraftingData.station}
     
-    ClearPedTasks(PlayerPedId())
-    
     QBCore.Functions.Notify(message, "success")
     playSound(Config.Sounds.CraftingComplete)
     
@@ -504,8 +353,6 @@ end)
 RegisterNetEvent('crafting:client:craftingError', function(message)
     currentCraftingData = {station = currentCraftingData.station}
     
-    ClearPedTasks(PlayerPedId())
-    
     QBCore.Functions.Notify(message, "error")
     playSound(Config.Sounds.CraftingFailed)
     
@@ -515,21 +362,6 @@ RegisterNetEvent('crafting:client:craftingError', function(message)
             inventory = getPlayerInventory()
         })
     end
-end)
-
-RegisterNetEvent('crafting:forceClose', function()
-    if isNuiOpen then
-        closeCrafting()
-    end
-end)
-
--- Eventos para añadir/quitar items
-RegisterNetEvent('crafting:client:addItem', function(itemName, quantity)
-    addItemToPlayer(itemName, quantity)
-end)
-
-RegisterNetEvent('crafting:client:removeItem', function(itemName, quantity)
-    removeItemFromPlayer(itemName, quantity)
 end)
 
 -- ===== CALLBACKS NUI =====
@@ -549,40 +381,8 @@ RegisterNUICallback('closeCrafting', function(data, cb)
 end)
 
 RegisterNUICallback('completeCrafting', function(data, cb)
-    -- Procesar completado de crafting con cantidad
     TriggerServerEvent('crafting:server:processCraftingComplete', data.recipe, data.station, data.quantity or 1)
     cb('ok')
-end)
-
--- ===== THREADS DE MONITOREO =====
-CreateThread(function()
-    while true do
-        Wait(1000)
-        
-        if currentCraftingData.recipe then
-            local playerPed = PlayerPedId()
-            
-            if not Config.Crafting.AllowCraftingWhileMoving then
-                local velocity = GetEntityVelocity(playerPed)
-                local speed = math.sqrt(velocity.x^2 + velocity.y^2 + velocity.z^2)
-                
-                if speed > 1.0 then
-                    cancelCrafting()
-                    QBCore.Functions.Notify("Crafting cancelado por movimiento", "error")
-                end
-            end
-            
-            if Config.Crafting.CancelOnDamage and HasEntityBeenDamagedByAnyPed(playerPed) then
-                cancelCrafting()
-                QBCore.Functions.Notify("Crafting cancelado por daño recibido", "error")
-            end
-            
-            if Config.Crafting.CancelOnVehicle and IsPedInAnyVehicle(playerPed, false) then
-                cancelCrafting()
-                QBCore.Functions.Notify("Crafting cancelado al entrar al vehículo", "error")
-            end
-        end
-    end
 end)
 
 -- ===== COMANDOS DE PRUEBA =====
@@ -595,16 +395,6 @@ if Config.Debug then
     RegisterCommand('givecraftitems', function()
         TriggerServerEvent('crafting:server:giveTestItems')
     end, false)
-    
-    RegisterCommand('clearcrafting', function()
-        if currentCraftingData.recipe then
-            cancelCrafting()
-        end
-        if isNuiOpen then
-            closeCrafting()
-        end
-        QBCore.Functions.Notify("Crafting limpiado", "success")
-    end, false)
 end
 
 -- ===== CLEANUP =====
@@ -613,11 +403,6 @@ AddEventHandler('onResourceStop', function(resourceName)
         if isNuiOpen then
             SetNuiFocus(false, false)
         end
-        
-        if currentCraftingData.recipe then
-            ClearPedTasks(PlayerPedId())
-        end
-        
         cleanupStations()
     end
 end)
@@ -645,35 +430,4 @@ CreateThread(function()
             debugPrint("Sistema de crafting inicializado con ox_target (retrasado)")
         end)
     end
-end)
-
--- ===== EXPORTS =====
-exports('IsNUIOpen', function()
-    return isNuiOpen
-end)
-
-exports('IsCrafting', function()
-    return currentCraftingData.recipe ~= nil
-end)
-
-exports('GetCurrentStation', function()
-    return currentCraftingData.station
-end)
-
-exports('OpenCraftingStation', function(stationName)
-    TriggerEvent('crafting:openStation', {station = stationName})
-end)
-
-exports('CloseCrafting', function()
-    if isNuiOpen then
-        closeCrafting()
-    end
-end)
-
-exports('AddItem', function(itemName, quantity)
-    addItemToPlayer(itemName, quantity)
-end)
-
-exports('RemoveItem', function(itemName, quantity)
-    removeItemFromPlayer(itemName, quantity)
 end)
