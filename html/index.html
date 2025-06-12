@@ -19,7 +19,7 @@
             <div class="header">
                 <div class="header-title">
                     <i class="station-icon" id="station-icon"></i>
-                    <span id="station-name">CRAFTING STATION</span>
+                    <span id="station-name">CAMPFIRE COOKING</span>
                 </div>
                 <button id="close-btn" class="close-btn">
                     <i class="fas fa-times"></i>
@@ -71,10 +71,10 @@
                         <!-- Botones de acción -->
                         <div class="action-buttons">
                             <button id="craft-btn" class="craft-btn" disabled onclick="startCrafting()">
-                                CRAFT
+                                <i class="fas fa-hammer"></i> CRAFT
                             </button>
                             <button id="clear-btn" class="clear-btn" onclick="clearSelection()">
-                                CLEAR
+                                <i class="fas fa-broom"></i> CLEAR
                             </button>
                         </div>
                     </div>
@@ -82,13 +82,15 @@
                     <!-- Progreso de crafting -->
                     <div id="crafting-progress" class="crafting-progress hidden">
                         <div class="progress-info">
-                            <span>Crafting: <span id="crafting-item-name"></span></span>
+                            <span><i class="fas fa-fire"></i> Crafting: <span id="crafting-item-name"></span></span>
                             <span id="time-remaining"></span>
                         </div>
                         <div class="progress-bar-container">
                             <div class="progress-bar" id="progress-bar"></div>
                         </div>
-                        <button class="cancel-btn" onclick="cancelCrafting()">CANCEL</button>
+                        <button class="cancel-btn" onclick="cancelCrafting()">
+                            <i class="fas fa-times"></i> CANCEL
+                        </button>
                     </div>
                 </div>
 
@@ -97,7 +99,7 @@
                     <h3>RESULTS</h3>
                     <div class="result-display" id="result-display">
                         <div class="result-placeholder">
-                            <i class="fas fa-box-open"></i>
+                            <i class="fas fa-gift"></i>
                             <span>Result will appear here</span>
                         </div>
                     </div>
