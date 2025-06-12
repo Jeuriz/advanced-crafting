@@ -1,5 +1,5 @@
 -- ================================
--- SISTEMA DE CRAFTING - SERVIDOR
+-- SISTEMA DE CRAFTING - SERVIDOR (UI MINIMALISTA)
 -- Compatible con QBCore + tgiann-inventory
 -- ================================
 
@@ -17,42 +17,46 @@ local function getPlayer(source)
     return QBCore.Functions.GetPlayer(source)
 end
 
--- Función para verificar items del servidor (compatible con tgiann-inventory)
-local function hasRequiredItems(source, requiredItems)
+-- Función para verificar items del servidor
+local function hasRequiredItems(source, requiredItems, quantity)
+    quantity = quantity or 1
     local Player = getPlayer(source)
     if not Player then return false end
     
     for itemName, requiredAmount in pairs(requiredItems) do
         local item = Player.Functions.GetItemByName(itemName)
         local hasAmount = item and item.amount or 0
+        local totalRequired = requiredAmount * quantity
         
-        if hasAmount < requiredAmount then
-            return false, itemName, hasAmount, requiredAmount
+        if hasAmount < totalRequired then
+            return false, itemName, hasAmount, totalRequired
         end
     end
     return true
 end
 
--- Función para remover items (compatible con tgiann-inventory)
-local function removeItems(source, items)
+-- Función para remover items
+local function removeItems(source, items, quantity)
+    quantity = quantity or 1
     local Player = getPlayer(source)
     if not Player then return false end
     
     for itemName, amount in pairs(items) do
-        local success = Player.Functions.RemoveItem(itemName, amount)
+        local totalAmount = amount * quantity
+        local success = Player.Functions.RemoveItem(itemName, totalAmount)
         if not success then
-            debugPrint("Error removiendo item: " .. itemName .. " x" .. amount)
+            debugPrint("Error removiendo item: " .. itemName .. " x" .. totalAmount)
             return false
         end
-        debugPrint("Removido del inventario: " .. itemName .. " x" .. amount)
+        debugPrint("Removido del inventario: " .. itemName .. " x" .. totalAmount)
     end
     
-    -- Actualizar inventario del cliente
     TriggerClientEvent('inventory:client:ItemBox', source, items, "remove")
+    TriggerClientEvent('crafting:client:updateInventory', source)
     return true
 end
 
--- Función para añadir items (compatible con tgiann-inventory)
+-- Función para añadir items
 local function addItem(source, itemName, amount, metadata)
     local Player = getPlayer(source)
     if not Player then return false end
@@ -61,6 +65,10 @@ local function addItem(source, itemName, amount, metadata)
     if success then
         debugPrint("Añadido al inventario: " .. itemName .. " x" .. amount)
         TriggerClientEvent('inventory:client:ItemBox', source, {[itemName] = amount}, "add")
+        TriggerClientEvent('crafting:client:updateInventory', source)
+        
+        -- Enviar evento para actualizar UI
+        TriggerClientEvent('crafting:client:addItem', source, itemName, amount)
         return true
     else
         debugPrint("Error añadiendo item: " .. itemName .. " x" .. amount)
@@ -83,7 +91,6 @@ local function getPlayerCraftingData(source)
             lastReset = os.date("%Y-%m-%d")
         }
         
-        -- Cargar datos de la base de datos si existe
         if Config.Experience.Enabled then
             MySQL.Async.fetchAll('SELECT * FROM crafting_data WHERE citizenid = ?', {citizenid}, function(result)
                 if result[1] then
@@ -115,7 +122,7 @@ local function saveCraftingData(source)
 end
 
 -- Función para verificar límites diarios
-local function checkDailyLimits(source, recipeId)
+local function checkDailyLimits(source, recipeId, quantity)
     if not Config.Limits.EnableDailyLimits then return true end
     
     local data = getPlayerCraftingData(source)
@@ -123,7 +130,6 @@ local function checkDailyLimits(source, recipeId)
     
     local today = os.date("%Y-%m-%d")
     
-    -- Reset diario
     if data.lastReset ~= today then
         data.dailyCrafts = {}
         data.lastReset = today
@@ -132,7 +138,7 @@ local function checkDailyLimits(source, recipeId)
     local dailyLimit = Config.Limits.DailyLimits[recipeId]
     if dailyLimit then
         local currentCount = data.dailyCrafts[recipeId] or 0
-        if currentCount >= dailyLimit then
+        if currentCount + quantity > dailyLimit then
             return false, Config.Notifications.Messages.DailyLimitReached:format(dailyLimit)
         end
     end
@@ -167,7 +173,7 @@ local function addExperience(source, amount)
     
     if newLevel > data.level and newLevel <= Config.Experience.MaxLevel then
         data.level = newLevel
-        return true, newLevel -- Level up!
+        return true, newLevel
     end
     
     return false, data.level
@@ -175,7 +181,7 @@ end
 
 -- ===== EVENTOS DEL SERVIDOR =====
 
--- Evento para remover items
+-- Evento para remover items (simplificado)
 RegisterNetEvent('crafting:server:removeItem', function(itemName, amount)
     local src = source
     local Player = getPlayer(src)
@@ -183,10 +189,11 @@ RegisterNetEvent('crafting:server:removeItem', function(itemName, amount)
     if Player then
         Player.Functions.RemoveItem(itemName, amount)
         TriggerClientEvent('inventory:client:ItemBox', src, {[itemName] = amount}, "remove")
+        TriggerClientEvent('crafting:client:removeItem', src, itemName, amount)
     end
 end)
 
--- Evento para añadir items
+-- Evento para añadir items (simplificado)
 RegisterNetEvent('crafting:server:addItem', function(itemName, amount, metadata)
     local src = source
     local Player = getPlayer(src)
@@ -194,10 +201,11 @@ RegisterNetEvent('crafting:server:addItem', function(itemName, amount, metadata)
     if Player then
         Player.Functions.AddItem(itemName, amount, false, metadata)
         TriggerClientEvent('inventory:client:ItemBox', src, {[itemName] = amount}, "add")
+        TriggerClientEvent('crafting:client:addItem', src, itemName, amount)
     end
 end)
 
--- Evento para iniciar crafting
+-- Evento para iniciar crafting (con soporte para cantidades)
 RegisterNetEvent('crafting:server:startCrafting', function(data)
     local src = source
     local Player = getPlayer(src)
@@ -207,11 +215,12 @@ RegisterNetEvent('crafting:server:startCrafting', function(data)
     local station = data.station
     local recipeId = data.recipeId
     local recipe = data.recipe
+    local quantity = data.quantity or 1
     
-    debugPrint("Procesando crafting en servidor: " .. recipeId)
+    debugPrint("Procesando crafting en servidor: " .. recipeId .. " x" .. quantity)
     
     -- Verificaciones del servidor
-    local hasItems, missingItem, hasAmount, requiredAmount = hasRequiredItems(src, recipe.requiredItems)
+    local hasItems, missingItem, hasAmount, requiredAmount = hasRequiredItems(src, recipe.requiredItems, quantity)
     if not hasItems then
         TriggerClientEvent('crafting:client:craftingError', src, 
             Config.Notifications.Messages.NotEnoughItems:format(missingItem, hasAmount, requiredAmount))
@@ -219,7 +228,7 @@ RegisterNetEvent('crafting:server:startCrafting', function(data)
     end
     
     -- Verificar límites diarios
-    local canCraft, reason = checkDailyLimits(src, recipeId)
+    local canCraft, reason = checkDailyLimits(src, recipeId, quantity)
     if not canCraft then
         TriggerClientEvent('crafting:client:craftingError', src, reason)
         return
@@ -233,7 +242,7 @@ RegisterNetEvent('crafting:server:startCrafting', function(data)
     end
     
     -- Remover items
-    if not removeItems(src, recipe.requiredItems) then
+    if not removeItems(src, recipe.requiredItems, quantity) then
         TriggerClientEvent('crafting:client:craftingError', src, "Error al consumir materiales")
         return
     end
@@ -242,9 +251,18 @@ RegisterNetEvent('crafting:server:startCrafting', function(data)
     if Config.Limits.EnableDailyLimits then
         local data = getPlayerCraftingData(src)
         if data then
-            data.dailyCrafts[recipeId] = (data.dailyCrafts[recipeId] or 0) + 1
+            data.dailyCrafts[recipeId] = (data.dailyCrafts[recipeId] or 0) + quantity
         end
     end
+    
+    -- Almacenar datos del crafting actual
+    playerCraftingData[Player.PlayerData.citizenid] = playerCraftingData[Player.PlayerData.citizenid] or {}
+    playerCraftingData[Player.PlayerData.citizenid].currentCrafting = {
+        recipe = recipe,
+        quantity = quantity,
+        station = station,
+        startTime = os.time()
+    }
     
     -- Iniciar proceso de crafting en el cliente
     TriggerClientEvent('crafting:client:startCraftingProcess', src, recipe)
@@ -257,49 +275,24 @@ RegisterNetEvent('crafting:server:completeCrafting', function()
     
     if not Player then return end
     
-    -- Aquí normalmente tendrías los datos del crafting actual del jugador
-    -- Por simplicidad, asumimos que el cliente envía la información necesaria
-    -- En una implementación completa, almacenarías esta información en el servidor
+    local citizenid = Player.PlayerData.citizenid
+    local craftingData = playerCraftingData[citizenid] and playerCraftingData[citizenid].currentCrafting
     
-    debugPrint("Crafting completado para jugador: " .. src)
-end)
-
--- Evento para cancelar crafting
-RegisterNetEvent('crafting:server:cancelCrafting', function()
-    local src = source
-    debugPrint("Crafting cancelado para jugador: " .. src)
-    -- Aquí puedes devolver items si es necesario
-end)
-
--- Evento para procesar completado de crafting con receta específica
-RegisterNetEvent('crafting:server:processCraftingComplete', function(recipeId, station)
-    local src = source
-    local Player = getPlayer(src)
-    
-    if not Player then return end
-    
-    -- Buscar la receta
-    local recipe = nil
-    if Config.Recipes[station] then
-        for _, r in pairs(Config.Recipes[station]) do
-            if r.id == recipeId then
-                recipe = r
-                break
-            end
-        end
-    end
-    
-    if not recipe then
-        TriggerClientEvent('crafting:client:craftingError', src, "Receta no encontrada")
+    if not craftingData then
+        TriggerClientEvent('crafting:client:craftingError', src, "No hay crafting en progreso")
         return
     end
+    
+    local recipe = craftingData.recipe
+    local quantity = craftingData.quantity
     
     -- Verificar éxito del crafting
     local success = math.random() <= (recipe.settings.successRate or 1.0)
     
     if success then
         -- Añadir item resultante
-        local addSuccess = addItem(src, recipe.result.item, recipe.result.quantity, recipe.result.metadata)
+        local totalResult = recipe.result.quantity * quantity
+        local addSuccess = addItem(src, recipe.result.item, totalResult, recipe.result.metadata)
         
         if addSuccess then
             -- Calcular bonificaciones
@@ -313,7 +306,7 @@ RegisterNetEvent('crafting:server:processCraftingComplete', function(recipeId, s
             
             -- Añadir experiencia
             if Config.Experience.Enabled then
-                bonuses.experienceGained = recipe.settings.experience or 0
+                bonuses.experienceGained = (recipe.settings.experience or 0) * quantity
                 local leveledUp, newLevel = addExperience(src, bonuses.experienceGained)
                 bonuses.levelUp = leveledUp
                 bonuses.newLevel = newLevel
@@ -322,8 +315,11 @@ RegisterNetEvent('crafting:server:processCraftingComplete', function(recipeId, s
             -- Verificar item extra por habilidad
             if recipe.settings.extraItemChance and math.random() <= recipe.settings.extraItemChance then
                 bonuses.extraItem = true
-                addItem(src, recipe.result.item, 1, recipe.result.metadata)
+                addItem(src, recipe.result.item, quantity, recipe.result.metadata)
             end
+            
+            -- Limpiar datos de crafting actual
+            playerCraftingData[citizenid].currentCrafting = nil
             
             -- Guardar datos
             saveCraftingData(src)
@@ -348,7 +344,7 @@ RegisterNetEvent('crafting:server:processCraftingComplete', function(recipeId, s
         -- Posibilidad de devolver algunos items
         if not recipe.settings.loseItemsOnFail then
             for itemName, amount in pairs(recipe.requiredItems) do
-                local returnAmount = math.ceil(amount * 0.5) -- Devolver 50%
+                local returnAmount = math.ceil(amount * quantity * 0.5) -- Devolver 50%
                 if returnAmount > 0 then
                     addItem(src, itemName, returnAmount)
                 end
@@ -357,18 +353,80 @@ RegisterNetEvent('crafting:server:processCraftingComplete', function(recipeId, s
     end
 end)
 
+-- Evento para cancelar crafting
+RegisterNetEvent('crafting:server:cancelCrafting', function()
+    local src = source
+    local Player = getPlayer(src)
+    
+    if Player then
+        local citizenid = Player.PlayerData.citizenid
+        if playerCraftingData[citizenid] then
+            playerCraftingData[citizenid].currentCrafting = nil
+        end
+    end
+    
+    debugPrint("Crafting cancelado para jugador: " .. src)
+end)
+
+-- Evento para procesar completado con datos específicos
+RegisterNetEvent('crafting:server:processCraftingComplete', function(recipeId, station, quantity)
+    local src = source
+    local Player = getPlayer(src)
+    
+    if not Player then return end
+    
+    -- Buscar la receta
+    local recipe = nil
+    if Config.Recipes[station] then
+        for _, r in pairs(Config.Recipes[station]) do
+            if r.id == recipeId then
+                recipe = r
+                break
+            end
+        end
+    end
+    
+    if not recipe then
+        TriggerClientEvent('crafting:client:craftingError', src, "Receta no encontrada")
+        return
+    end
+    
+    quantity = quantity or 1
+    
+    -- Procesar como completado normal
+    local citizenid = Player.PlayerData.citizenid
+    playerCraftingData[citizenid] = playerCraftingData[citizenid] or {}
+    playerCraftingData[citizenid].currentCrafting = {
+        recipe = recipe,
+        quantity = quantity,
+        station = station,
+        startTime = os.time()
+    }
+    
+    -- Llamar al evento de completar
+    TriggerEvent('crafting:server:completeCrafting', src)
+end)
+
 -- Evento para dar items de prueba
 RegisterNetEvent('crafting:server:giveTestItems', function()
     if not Config.Debug then return end
     
     local src = source
     local testItems = {
-        'water_dirty', 'meat_raw', 'vegetables', 'herbs', 
-        'charcoal', 'metalscrap', 'water_filter'
+        ['sealed_parts'] = 10,
+        ['solid_metal_piece'] = 10,
+        ['thick_fabric'] = 10,
+        ['water_dirty'] = 10,
+        ['meat_raw'] = 10,
+        ['vegetables'] = 10,
+        ['herbs'] = 10,
+        ['charcoal'] = 10,
+        ['metalscrap'] = 10,
+        ['water_filter'] = 5
     }
     
-    for _, item in pairs(testItems) do
-        addItem(src, item, 10)
+    for item, amount in pairs(testItems) do
+        addItem(src, item, amount)
     end
     
     TriggerClientEvent('QBCore:Notify', src, "Items de crafting añadidos", "success")
@@ -377,8 +435,10 @@ end)
 -- ===== CALLBACKS =====
 
 -- Callback para verificar si se puede craftear una receta
-QBCore.Functions.CreateCallback('crafting:canCraftRecipe', function(source, cb, recipeId, station)
-    local canCraft, reason = checkDailyLimits(source, recipeId)
+QBCore.Functions.CreateCallback('crafting:canCraftRecipe', function(source, cb, recipeId, station, quantity)
+    quantity = quantity or 1
+    
+    local canCraft, reason = checkDailyLimits(source, recipeId, quantity)
     if not canCraft then
         cb(false, reason)
         return
@@ -444,6 +504,9 @@ QBCore.Commands.Add('givecraftitems', 'Da items de crafting (Admin)', {{name = '
     end
     
     local testItems = {
+        ['sealed_parts'] = 10,
+        ['solid_metal_piece'] = 10,
+        ['thick_fabric'] = 10,
         ['water_dirty'] = 10,
         ['meat_raw'] = 10,
         ['vegetables'] = 10,
@@ -459,6 +522,31 @@ QBCore.Commands.Add('givecraftitems', 'Da items de crafting (Admin)', {{name = '
     
     TriggerClientEvent('QBCore:Notify', src, "Items de crafting dados a " .. Player.PlayerData.name, "success")
     TriggerClientEvent('QBCore:Notify', targetId, "Has recibido items de crafting", "success")
+end, 'admin')
+
+-- Comando para añadir item específico
+QBCore.Commands.Add('addcraftitem', 'Añade un item específico (Admin)', {
+    {name = 'id', help = 'ID del jugador'},
+    {name = 'item', help = 'Nombre del item'},
+    {name = 'cantidad', help = 'Cantidad'}
+}, true, function(source, args)
+    local src = source
+    local targetId = tonumber(args[1])
+    local itemName = args[2]
+    local quantity = tonumber(args[3]) or 1
+    
+    local Player = getPlayer(targetId)
+    if not Player then
+        TriggerClientEvent('QBCore:Notify', src, "Jugador no encontrado", "error")
+        return
+    end
+    
+    if addItem(targetId, itemName, quantity) then
+        TriggerClientEvent('QBCore:Notify', src, string.format("Añadido %dx %s a %s", quantity, itemName, Player.PlayerData.name), "success")
+        TriggerClientEvent('QBCore:Notify', targetId, string.format("Has recibido %dx %s", quantity, itemName), "success")
+    else
+        TriggerClientEvent('QBCore:Notify', src, "Error al añadir item", "error")
+    end
 end, 'admin')
 
 -- Comando para resetear experiencia de crafting
@@ -538,4 +626,12 @@ exports('AddCraftingExperience', function(source, amount)
     return addExperience(source, amount)
 end)
 
-print("^2[CRAFTING SYSTEM]^7 Sistema de crafting cargado correctamente")
+exports('AddItemToPlayer', function(source, itemName, quantity, metadata)
+    return addItem(source, itemName, quantity, metadata)
+end)
+
+exports('RemoveItemFromPlayer', function(source, itemName, quantity)
+    return removeItems(source, {[itemName] = quantity}, 1)
+end)
+
+print("^2[CRAFTING SYSTEM MINIMALISTA]^7 Sistema de crafting cargado correctamente")
