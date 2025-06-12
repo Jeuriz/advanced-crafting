@@ -157,6 +157,46 @@ local function createStationBlip(coords, stationConfig)
     return blip
 end
 
+-- Función para convertir recetas del config al formato UI
+local function convertRecipesToUIFormat()
+    local uiRecipes = {}
+    
+    for stationName, recipes in pairs(Config.Recipes) do
+        uiRecipes[stationName] = {}
+        
+        for _, recipe in pairs(recipes) do
+            table.insert(uiRecipes[stationName], {
+                id = recipe.id,
+                name = recipe.name,
+                description = recipe.description,
+                result = recipe.result,
+                ingredients = recipe.requiredItems, -- Mapear requiredItems a ingredients
+                time = recipe.settings.craftTime,
+                difficulty = recipe.settings.difficulty,
+                effects = recipe.settings.effects or {}
+            })
+        end
+    end
+    
+    return uiRecipes
+end
+
+-- Función para convertir estaciones del config al formato UI
+local function convertStationsToUIFormat()
+    local uiStations = {}
+    
+    for stationName, stationConfig in pairs(Config.Stations) do
+        uiStations[stationName] = {
+            name = stationConfig.label,
+            icon = stationConfig.icon,
+            color = stationConfig.color,
+            description = stationConfig.description
+        }
+    end
+    
+    return uiStations
+end
+
 local function createCraftingStations()
     debugPrint("Creando estaciones de crafting...")
     
@@ -361,12 +401,18 @@ function openCrafting(data)
     isNuiOpen = true
     SetNuiFocus(true, true)
     
-    -- Enviar datos al NUI
+    -- Enviar todos los datos del config al NUI
     SendNUIMessage({
         action = "openCrafting",
-        station = stationName,
+        activeStation = stationName,
         inventory = getPlayerInventory(),
+        stations = convertStationsToUIFormat(),
+        recipes = convertRecipesToUIFormat(),
+        itemNames = Config.ItemNames,
+        itemRarity = Config.ItemRarity,
         config = {
+            imagePath = Config.UI.ImagePath,
+            imageFormat = Config.UI.ImageFormat,
             ui = Config.UI,
             sounds = Config.Sounds
         }
