@@ -1,6 +1,6 @@
 -- ================================
--- SISTEMA DE CRAFTING - CLIENTE
--- Compatible con QBCore + tgiann inventory + ox_target
+-- SISTEMA DE CRAFTING - CLIENTE (CORREGIDO PARA TGIANN-INVENTORY)
+-- Compatible con QBCore + tgiann-inventory + ox_target
 -- ================================
 
 local QBCore = exports['qb-core']:GetCoreObject()
@@ -22,29 +22,17 @@ local function playSound(soundConfig)
     end
 end
 
+-- Función corregida para obtener inventario con tgiann-inventory
 local function getPlayerInventory()
     local inventory = {}
     
-    if Config.Inventory == 'tgiann' and exports['tgiann-inventory'] then
-        local playerItems = exports['tgiann-inventory']:getPlayerItems()
-        
-        for _, item in pairs(playerItems) do
-            local mappedName = Config.ItemMapping[item.name]
-            if mappedName then
-                inventory[mappedName] = (inventory[mappedName] or 0) + item.count
-            end
-        end
-    else
-        -- Fallback para QBCore inventory estándar
-        local PlayerData = QBCore.Functions.GetPlayerData()
-        if PlayerData.items then
-            for _, item in pairs(PlayerData.items) do
-                if item and item.name and item.amount > 0 then
-                    local mappedName = Config.ItemMapping[item.name]
-                    if mappedName then
-                        inventory[mappedName] = (inventory[mappedName] or 0) + item.amount
-                    end
-                end
+    -- tgiann-inventory es compatible con QBCore estándar
+    local PlayerData = QBCore.Functions.GetPlayerData()
+    if PlayerData.items then
+        for _, item in pairs(PlayerData.items) do
+            if item and item.name and item.amount > 0 then
+                local mappedName = Config.ItemMapping[item.name] or item.name
+                inventory[mappedName] = (inventory[mappedName] or 0) + item.amount
             end
         end
     end
@@ -53,19 +41,17 @@ local function getPlayerInventory()
     return inventory
 end
 
+-- Función corregida para verificar items requeridos
 local function hasRequiredItems(requiredItems)
     for itemName, requiredAmount in pairs(requiredItems) do
         local hasAmount = 0
         
-        if Config.Inventory == 'tgiann' and exports['tgiann-inventory'] then
-            hasAmount = exports['tgiann-inventory']:getItemCount(itemName) or 0
-        else
-            local PlayerData = QBCore.Functions.GetPlayerData()
-            if PlayerData.items then
-                for _, item in pairs(PlayerData.items) do
-                    if item and item.name == itemName then
-                        hasAmount = hasAmount + item.amount
-                    end
+        -- Usar QBCore estándar - tgiann-inventory es compatible
+        local PlayerData = QBCore.Functions.GetPlayerData()
+        if PlayerData.items then
+            for _, item in pairs(PlayerData.items) do
+                if item and item.name == itemName and item.amount > 0 then
+                    hasAmount = hasAmount + item.amount
                 end
             end
         end
@@ -77,24 +63,17 @@ local function hasRequiredItems(requiredItems)
     return true
 end
 
+-- Funciones simplificadas para añadir/remover items
 local function removeItems(items)
     for itemName, amount in pairs(items) do
-        if Config.Inventory == 'tgiann' and exports['tgiann-inventory'] then
-            exports['tgiann-inventory']:removeItem(itemName, amount)
-        else
-            QBCore.Functions.TriggerCallback('crafting:removeItem', function() end, itemName, amount)
-        end
-        debugPrint("Removido: " .. itemName .. " x" .. amount)
+        TriggerServerEvent('crafting:server:removeItem', itemName, amount)
+        debugPrint("Removiendo: " .. itemName .. " x" .. amount)
     end
 end
 
 local function addItem(itemName, amount, metadata)
-    if Config.Inventory == 'tgiann' and exports['tgiann-inventory'] then
-        exports['tgiann-inventory']:addItem(itemName, amount, metadata or {})
-    else
-        QBCore.Functions.TriggerCallback('crafting:addItem', function() end, itemName, amount, metadata or {})
-    end
-    debugPrint("Añadido: " .. itemName .. " x" .. amount)
+    TriggerServerEvent('crafting:server:addItem', itemName, amount, metadata or {})
+    debugPrint("Añadiendo: " .. itemName .. " x" .. amount)
 end
 
 local function playAnimation(animDict, animName, duration, flag)
@@ -146,14 +125,10 @@ local function canPlayerUseStation(stationConfig, stationName)
     -- Verificar item requerido
     if stationConfig.settings.requiredItem then
         local hasItem = false
-        if Config.Inventory == 'tgiann' and exports['tgiann-inventory'] then
-            hasItem = exports['tgiann-inventory']:getItemCount(stationConfig.settings.requiredItem) > 0
-        else
-            for _, item in pairs(PlayerData.items) do
-                if item and item.name == stationConfig.settings.requiredItem and item.amount > 0 then
-                    hasItem = true
-                    break
-                end
+        for _, item in pairs(PlayerData.items) do
+            if item and item.name == stationConfig.settings.requiredItem and item.amount > 0 then
+                hasItem = true
+                break
             end
         end
         
@@ -161,16 +136,6 @@ local function canPlayerUseStation(stationConfig, stationName)
             QBCore.Functions.Notify(Config.Notifications.Messages.ItemRequired:format(stationConfig.settings.requiredItem), "error")
             return false
         end
-    end
-    
-    -- Verificar nivel mínimo
-    if Config.Experience.Enabled and stationConfig.settings.minLevel then
-        QBCore.Functions.TriggerCallback('crafting:getPlayerLevel', function(level)
-            if level < stationConfig.settings.minLevel then
-                QBCore.Functions.Notify(Config.Notifications.Messages.LevelRequired:format(stationConfig.settings.minLevel), "error")
-                return false
-            end
-        end)
     end
     
     return true
@@ -223,27 +188,31 @@ local function createCraftingStations()
             -- Crear zona de ox_target
             local targetId = "crafting_" .. stationName .. "_" .. i
             
-            exports.ox_target:addSphereZone({
-                coords = coords,
-                radius = location.radius or 2.0,
-                debug = Config.Debug,
-                options = {
-                    {
-                        name = targetId,
-                        icon = stationConfig.icon,
-                        label = "Usar " .. stationConfig.label,
-                        onSelect = function()
-                            if canPlayerUseStation(stationConfig, stationName) then
-                                TriggerEvent('crafting:openStation', {station = stationName})
-                            end
-                        end,
-                        canInteract = function()
-                            return not isNuiOpen and not currentCraftingData.recipe
-                        end,
-                        distance = Config.Crafting.MaxCraftingDistance
+            if GetResourceState('ox_target') == 'started' then
+                exports.ox_target:addSphereZone({
+                    coords = coords,
+                    radius = location.radius or 2.0,
+                    debug = Config.Debug,
+                    options = {
+                        {
+                            name = targetId,
+                            icon = stationConfig.icon,
+                            label = "Usar " .. stationConfig.label,
+                            onSelect = function()
+                                if canPlayerUseStation(stationConfig, stationName) then
+                                    TriggerEvent('crafting:openStation', {station = stationName})
+                                end
+                            end,
+                            canInteract = function()
+                                return not isNuiOpen and not currentCraftingData.recipe
+                            end,
+                            distance = Config.Crafting.MaxCraftingDistance
+                        }
                     }
-                }
-            })
+                })
+            else
+                debugPrint("ox_target no está disponible")
+            end
             
             debugPrint("Estación creada: " .. stationName .. " en " .. tostring(coords))
         end
@@ -268,17 +237,21 @@ local function cleanupStations()
     craftingObjects = {}
     
     -- Limpiar zonas de ox_target
-    for stationName, stationConfig in pairs(Config.Stations) do
-        for i, _ in pairs(stationConfig.locations) do
-            local targetId = "crafting_" .. stationName .. "_" .. i
-            exports.ox_target:removeZone(targetId)
+    if GetResourceState('ox_target') == 'started' then
+        for stationName, stationConfig in pairs(Config.Stations) do
+            for i, _ in pairs(stationConfig.locations) do
+                local targetId = "crafting_" .. stationName .. "_" .. i
+                pcall(function()
+                    exports.ox_target:removeZone(targetId)
+                end)
+            end
         end
     end
 end
 
 -- ===== FUNCIONES DE CRAFTING =====
 function startCrafting(recipeId)
-    if currentCraftingData.recipe or isNuiOpen then return end
+    if currentCraftingData.recipe then return end
     
     debugPrint("Iniciando crafting: " .. recipeId)
     
@@ -301,7 +274,7 @@ function startCrafting(recipeId)
         return
     end
     
-    -- Verificar items
+    -- Verificar items en el cliente
     local hasItems, missingItem, hasAmount, requiredAmount = hasRequiredItems(recipe.requiredItems)
     if not hasItems then
         SendNUIMessage({
@@ -311,58 +284,12 @@ function startCrafting(recipeId)
         return
     end
     
-    -- Verificar límites diarios y nivel
-    QBCore.Functions.TriggerCallback('crafting:canCraftRecipe', function(canCraft, reason)
-        if not canCraft then
-            SendNUIMessage({
-                action = "craftingError",
-                message = reason
-            })
-            return
-        end
-        
-        -- Consumir items
-        removeItems(recipe.requiredItems)
-        
-        -- Guardar datos del crafting actual
-        currentCraftingData.recipe = recipe
-        currentCraftingData.startTime = GetGameTimer()
-        
-        -- Calcular tiempo ajustado por bonificaciones
-        QBCore.Functions.TriggerCallback('crafting:getCraftingTime', function(adjustedTime)
-            currentCraftingData.adjustedTime = adjustedTime
-            
-            -- Iniciar animación
-            local stationConfig = Config.Stations[currentCraftingData.station]
-            if stationConfig and stationConfig.settings.animation then
-                local anim = stationConfig.settings.animation
-                playAnimation(anim.dict, anim.anim, adjustedTime, anim.flag)
-            end
-            
-            -- Reproducir sonido
-            playSound(Config.Sounds.CraftingStart)
-            
-            -- Enviar al NUI para iniciar progreso
-            SendNUIMessage({
-                action = "startCraftingProcess",
-                recipe = {
-                    id = recipe.id,
-                    name = recipe.name,
-                    time = adjustedTime
-                }
-            })
-            
-            -- Notificar inicio
-            QBCore.Functions.Notify(Config.Notifications.Messages.CraftingStarted:format(recipe.name), "primary")
-            
-            -- Iniciar timer para completar
-            SetTimeout(adjustedTime, function()
-                completeCrafting()
-            end)
-            
-        end, recipe.settings.craftTime)
-        
-    end, recipeId, currentCraftingData.station)
+    -- Enviar al servidor para procesar
+    TriggerServerEvent('crafting:server:startCrafting', {
+        station = currentCraftingData.station,
+        recipeId = recipeId,
+        recipe = recipe
+    })
 end
 
 function completeCrafting()
@@ -389,67 +316,8 @@ function completeCrafting()
         return
     end
     
-    -- Verificar éxito del crafting
-    local success = math.random() <= (recipe.settings.successRate or 1.0)
-    
-    if success then
-        -- Añadir item resultante
-        addItem(recipe.result.item, recipe.result.quantity, recipe.result.metadata)
-        
-        -- Verificar bonificaciones del servidor
-        QBCore.Functions.TriggerCallback('crafting:processCraftingComplete', function(bonuses)
-            if bonuses.extraItem then
-                addItem(recipe.result.item, 1, recipe.result.metadata)
-                QBCore.Functions.Notify(Config.Notifications.Messages.BonusItem, "success")
-            end
-            
-            if bonuses.improvedQuality then
-                QBCore.Functions.Notify(Config.Notifications.Messages.ImprovedQuality, "success")
-            end
-            
-            if bonuses.levelUp then
-                QBCore.Functions.Notify(Config.Notifications.Messages.LevelUp:format(bonuses.newLevel), "success")
-                playSound(Config.Sounds.LevelUp)
-            end
-            
-            if bonuses.experienceGained > 0 then
-                QBCore.Functions.Notify(Config.Notifications.Messages.ExperienceGained:format(bonuses.experienceGained), "primary")
-            end
-        end, recipe.id, currentCraftingData.station)
-        
-        -- Notificar éxito
-        QBCore.Functions.Notify(Config.Notifications.Messages.CraftingComplete:format(recipe.name), "success")
-        playSound(Config.Sounds.CraftingComplete)
-        
-    else
-        -- Crafting falló
-        QBCore.Functions.Notify(Config.Notifications.Messages.CraftingFailed, "error")
-        playSound(Config.Sounds.CraftingFailed)
-        
-        -- Posibilidad de devolver algunos items
-        if not recipe.settings.loseItemsOnFail then
-            for itemName, amount in pairs(recipe.requiredItems) do
-                local returnAmount = math.ceil(amount * 0.5) -- Devolver 50%
-                if returnAmount > 0 then
-                    addItem(itemName, returnAmount)
-                end
-            end
-        end
-    end
-    
-    -- Limpiar datos
-    currentCraftingData = {station = currentCraftingData.station}
-    
-    -- Parar animación
-    ClearPedTasks(PlayerPedId())
-    
-    -- Actualizar inventario en UI
-    if isNuiOpen then
-        SendNUIMessage({
-            action = "updateInventory",
-            inventory = getPlayerInventory()
-        })
-    end
+    -- Enviar al servidor para completar
+    TriggerServerEvent('crafting:server:completeCrafting')
 end
 
 function cancelCrafting()
@@ -457,12 +325,10 @@ function cancelCrafting()
     
     debugPrint("Crafting cancelado")
     
-    -- Devolver items
-    for itemName, amount in pairs(currentCraftingData.recipe.requiredItems) do
-        addItem(itemName, amount)
-    end
+    -- Enviar al servidor para cancelar
+    TriggerServerEvent('crafting:server:cancelCrafting')
     
-    -- Limpiar datos
+    -- Limpiar datos locales
     currentCraftingData = {station = currentCraftingData.station}
     
     -- Parar animación
@@ -523,13 +389,12 @@ function closeCrafting()
     end
     
     currentCraftingData = {}
-    
     playSound(Config.Sounds.UIClick)
 end
 
 -- ===== EVENTOS =====
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
-    Wait(2000) -- Esperar a que todo cargue
+    Wait(2000)
     createCraftingStations()
 end)
 
@@ -544,7 +409,80 @@ RegisterNetEvent('crafting:openStation', function(data)
     openCrafting(data)
 end)
 
-RegisterNetEvent('crafting:updateInventory', function()
+RegisterNetEvent('crafting:client:updateInventory', function()
+    if isNuiOpen then
+        SendNUIMessage({
+            action = "updateInventory",
+            inventory = getPlayerInventory()
+        })
+    end
+end)
+
+RegisterNetEvent('crafting:client:startCraftingProcess', function(recipe)
+    currentCraftingData.recipe = recipe
+    currentCraftingData.startTime = GetGameTimer()
+    
+    -- Iniciar animación
+    local stationConfig = Config.Stations[currentCraftingData.station]
+    if stationConfig and stationConfig.settings.animation then
+        local anim = stationConfig.settings.animation
+        playAnimation(anim.dict, anim.anim, recipe.settings.craftTime, anim.flag)
+    end
+    
+    -- Reproducir sonido
+    playSound(Config.Sounds.CraftingStart)
+    
+    -- Enviar al NUI para iniciar progreso
+    SendNUIMessage({
+        action = "startCraftingProcess",
+        recipe = {
+            id = recipe.id,
+            name = recipe.name,
+            time = recipe.settings.craftTime
+        }
+    })
+    
+    -- Notificar inicio
+    QBCore.Functions.Notify(Config.Notifications.Messages.CraftingStarted:format(recipe.name), "primary")
+    
+    -- Iniciar timer para completar
+    SetTimeout(recipe.settings.craftTime, function()
+        completeCrafting()
+    end)
+end)
+
+RegisterNetEvent('crafting:client:craftingSuccess', function(message)
+    -- Limpiar datos
+    currentCraftingData = {station = currentCraftingData.station}
+    
+    -- Parar animación
+    ClearPedTasks(PlayerPedId())
+    
+    -- Notificar éxito
+    QBCore.Functions.Notify(message, "success")
+    playSound(Config.Sounds.CraftingComplete)
+    
+    -- Actualizar inventario en UI
+    if isNuiOpen then
+        SendNUIMessage({
+            action = "updateInventory",
+            inventory = getPlayerInventory()
+        })
+    end
+end)
+
+RegisterNetEvent('crafting:client:craftingError', function(message)
+    -- Limpiar datos
+    currentCraftingData = {station = currentCraftingData.station}
+    
+    -- Parar animación
+    ClearPedTasks(PlayerPedId())
+    
+    -- Notificar error
+    QBCore.Functions.Notify(message, "error")
+    playSound(Config.Sounds.CraftingFailed)
+    
+    -- Actualizar inventario en UI
     if isNuiOpen then
         SendNUIMessage({
             action = "updateInventory",
@@ -595,7 +533,7 @@ CreateThread(function()
                 local velocity = GetEntityVelocity(playerPed)
                 local speed = math.sqrt(velocity.x^2 + velocity.y^2 + velocity.z^2)
                 
-                if speed > 1.0 then -- Si se está moviendo rápido
+                if speed > 1.0 then
                     cancelCrafting()
                     QBCore.Functions.Notify("Crafting cancelado por movimiento", "error")
                 end
@@ -624,16 +562,7 @@ if Config.Debug then
     end, false)
     
     RegisterCommand('givecraftitems', function()
-        local items = {
-            'water_dirty', 'meat_raw', 'vegetables', 'herbs', 
-            'charcoal', 'metalscrap', 'water_filter'
-        }
-        
-        for _, item in pairs(items) do
-            addItem(item, 10)
-        end
-        
-        QBCore.Functions.Notify("Items de crafting añadidos", "success")
+        TriggerServerEvent('crafting:server:giveTestItems')
     end, false)
     
     RegisterCommand('clearcrafting', function()
@@ -674,8 +603,20 @@ CreateThread(function()
         Wait(100)
     end
     
-    createCraftingStations()
-    debugPrint("Sistema de crafting inicializado con ox_target")
+    -- Crear estaciones
+    if GetResourceState('ox_target') == 'started' then
+        createCraftingStations()
+        debugPrint("Sistema de crafting inicializado con ox_target")
+    else
+        debugPrint("ox_target no disponible, esperando...")
+        CreateThread(function()
+            while GetResourceState('ox_target') ~= 'started' do
+                Wait(5000)
+            end
+            createCraftingStations()
+            debugPrint("Sistema de crafting inicializado con ox_target (retrasado)")
+        end)
+    end
 end)
 
 -- ===== EXPORTS =====
