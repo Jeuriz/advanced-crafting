@@ -1,175 +1,35 @@
-
 // ===== CONFIGURACIÓN Y DATOS =====
 const CraftingSystem = {
     isOpen: false,
-    activeStation: 'cocina',
+    activeStation: null,
     inventory: {},
     isCrafting: false,
     craftingProgress: 0,
     craftingRecipe: null,
     craftingInterval: null,
-
-    // Configuración de estaciones
-    stations: {
-        cocina: {
-            name: 'Cocina de Supervivencia',
-            icon: 'fas fa-fire',
-            color: 'linear-gradient(135deg, #f97316 0%, #dc2626 100%)',
-            description: 'Prepara alimentos nutritivos',
-            recipes: [
-                {
-                    id: 'carne_cocida',
-                    name: 'Carne Cocida',
-                    description: 'Carne bien cocinada que restaura energía',
-                    result: { item: 'carne_cocida', quantity: 1 },
-                    ingredients: { 'carne_cruda': 1, 'carbon': 1 },
-                    time: 10000,
-                    difficulty: 1,
-                    effects: ['+50 Hambre', '+10 Salud', '+5 Energía']
-                },
-                {
-                    id: 'estofado',
-                    name: 'Estofado Nutritivo',
-                    description: 'Comida completa que satisface completamente',
-                    result: { item: 'estofado', quantity: 1 },
-                    ingredients: { 'carne_cruda': 2, 'vegetales': 2, 'hierbas': 1 },
-                    time: 15000,
-                    difficulty: 2,
-                    effects: ['+80 Hambre', '+20 Salud', '+15 Energía', '+5 Hidratación']
-                },
-                {
-                    id: 'sopa_hierbas',
-                    name: 'Sopa de Hierbas',
-                    description: 'Sopa medicinal con propiedades curativas',
-                    result: { item: 'sopa_hierbas', quantity: 1 },
-                    ingredients: { 'hierbas': 3, 'vegetales': 1, 'agua_limpia': 1 },
-                    time: 12000,
-                    difficulty: 2,
-                    effects: ['+30 Hambre', '+25 Salud', 'Regeneración 60s']
-                }
-            ]
-        },
-        purificacion: {
-            name: 'Purificador de Agua',
-            icon: 'fas fa-tint',
-            color: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)',
-            description: 'Convierte agua contaminada en potable',
-            recipes: [
-                {
-                    id: 'agua_limpia',
-                    name: 'Agua Purificada',
-                    description: 'Agua segura para consumo humano',
-                    result: { item: 'agua_limpia', quantity: 2 },
-                    ingredients: { 'agua_sucia': 3, 'filtro_improvised': 1 },
-                    time: 8000,
-                    difficulty: 1,
-                    effects: ['+40 Hidratación', 'Elimina toxinas']
-                },
-                {
-                    id: 'agua_destilada',
-                    name: 'Agua Destilada',
-                    description: 'Agua ultra pura para uso médico',
-                    result: { item: 'agua_destilada', quantity: 1 },
-                    ingredients: { 'agua_limpia': 2, 'carbon': 1 },
-                    time: 12000,
-                    difficulty: 2,
-                    effects: ['+30 Hidratación', '+10 Salud', 'Pureza 100%']
-                }
-            ]
-        },
-        alquimia: {
-            name: 'Mesa de Alquimia',
-            icon: 'fas fa-flask',
-            color: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
-            description: 'Crea pociones y estimulantes',
-            recipes: [
-                {
-                    id: 'pocion_salud',
-                    name: 'Poción de Salud',
-                    description: 'Restaura salud instantáneamente',
-                    result: { item: 'pocion_salud', quantity: 1 },
-                    ingredients: { 'hierbas': 3, 'agua_destilada': 1 },
-                    time: 18000,
-                    difficulty: 3,
-                    effects: ['+100 Salud', 'Regeneración 30s', 'Cura envenenamiento']
-                },
-                {
-                    id: 'estimulante',
-                    name: 'Estimulante de Combate',
-                    description: 'Aumenta capacidades físicas temporalmente',
-                    result: { item: 'estimulante', quantity: 1 },
-                    ingredients: { 'hierbas': 2, 'carne_cocida': 1, 'agua_limpia': 1 },
-                    time: 14000,
-                    difficulty: 2,
-                    effects: ['+50 Energía', '+25% Velocidad 5min', '+15% Fuerza 5min']
-                }
-            ]
-        },
-        herramientas: {
-            name: 'Banco de Trabajo',
-            icon: 'fas fa-hammer',
-            color: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
-            description: 'Fabrica herramientas y equipos',
-            recipes: [
-                {
-                    id: 'filtro_mejorado',
-                    name: 'Filtro Avanzado',
-                    description: 'Filtro de alta eficiencia para purificación',
-                    result: { item: 'filtro_mejorado', quantity: 1 },
-                    ingredients: { 'metal_chatarra': 2, 'filtro_improvised': 1, 'carbon': 1 },
-                    time: 20000,
-                    difficulty: 3,
-                    effects: ['Purifica 5x agua', 'Durabilidad +200%', 'Eficiencia +50%']
-                }
-            ]
-        }
-    },
-
-    // Nombres de items
-    itemNames: {
-        'agua_sucia': 'Agua Contaminada',
-        'carne_cruda': 'Carne Cruda',
-        'vegetales': 'Vegetales Frescos',
-        'hierbas': 'Hierbas Medicinales',
-        'carbon': 'Carbón Vegetal',
-        'metal_chatarra': 'Chatarra Metálica',
-        'filtro_improvised': 'Filtro Improvisado',
-        'carne_cocida': 'Carne Cocida',
-        'agua_limpia': 'Agua Purificada',
-        'agua_destilada': 'Agua Destilada',
-        'estofado': 'Estofado Nutritivo',
-        'sopa_hierbas': 'Sopa de Hierbas',
-        'pocion_salud': 'Poción de Salud',
-        'estimulante': 'Estimulante de Combate',
-        'filtro_mejorado': 'Filtro Avanzado'
-    },
-
-    // Rareza de items
-    itemRarity: {
-        'agua_sucia': 'common',
-        'carne_cruda': 'common',
-        'vegetales': 'common',
-        'hierbas': 'uncommon',
-        'carbon': 'common',
-        'metal_chatarra': 'uncommon',
-        'filtro_improvised': 'uncommon',
-        'carne_cocida': 'uncommon',
-        'agua_limpia': 'uncommon',
-        'agua_destilada': 'rare',
-        'estofado': 'rare',
-        'sopa_hierbas': 'rare',
-        'pocion_salud': 'epic',
-        'estimulante': 'rare',
-        'filtro_mejorado': 'epic'
-    }
+    
+    // Datos que vienen del servidor
+    stations: {},
+    recipes: {},
+    itemNames: {},
+    itemRarity: {},
+    config: {}
 };
 
 // ===== FUNCIONES DE UTILIDAD =====
 function getItemImage(itemName) {
-    return `nui://inventory_images/images/${itemName}.webp`;
+    const imagePath = CraftingSystem.config.imagePath || "nui://inventory_images/images/";
+    const imageFormat = CraftingSystem.config.imageFormat || ".webp";
+    return `${imagePath}${itemName}${imageFormat}`;
+}
+
+function getItemDisplayName(itemName) {
+    return CraftingSystem.itemNames[itemName] || itemName;
 }
 
 function canCraft(recipe) {
+    if (!recipe.ingredients) return false;
+    
     return Object.entries(recipe.ingredients).every(
         ([ingredient, required]) => (CraftingSystem.inventory[ingredient] || 0) >= required
     );
@@ -238,12 +98,13 @@ function renderInventory() {
         .filter(([_, quantity]) => quantity > 0)
         .forEach(([item, quantity]) => {
             const itemDiv = document.createElement('div');
-            itemDiv.className = `inventory-item ${CraftingSystem.itemRarity[item]}`;
+            const rarity = CraftingSystem.itemRarity[item] || 'common';
+            itemDiv.className = `inventory-item ${rarity}`;
             
             itemDiv.innerHTML = `
                 <div class="item-info">
-                    <img class="item-image" src="${getItemImage(item)}" alt="${CraftingSystem.itemNames[item]}" onerror="this.style.display='none'">
-                    <span class="item-name">${CraftingSystem.itemNames[item]}</span>
+                    <img class="item-image" src="${getItemImage(item)}" alt="${getItemDisplayName(item)}" onerror="this.style.display='none'">
+                    <span class="item-name">${getItemDisplayName(item)}</span>
                 </div>
                 <span class="item-quantity">${quantity}</span>
             `;
@@ -256,9 +117,11 @@ function renderRecipes() {
     const recipesContainer = document.getElementById('recipes-container');
     recipesContainer.innerHTML = '';
 
-    if (!CraftingSystem.stations[CraftingSystem.activeStation]) return;
+    if (!CraftingSystem.activeStation || !CraftingSystem.recipes[CraftingSystem.activeStation]) {
+        return;
+    }
 
-    const recipes = CraftingSystem.stations[CraftingSystem.activeStation].recipes;
+    const recipes = CraftingSystem.recipes[CraftingSystem.activeStation];
 
     recipes.forEach(recipe => {
         const canCraftRecipe = canCraft(recipe);
@@ -278,8 +141,8 @@ function renderRecipes() {
             return `
                 <div class="ingredient-item ${hasEnough ? 'available' : 'unavailable'}">
                     <div class="ingredient-info">
-                        <img class="ingredient-image" src="${getItemImage(ingredient)}" alt="${CraftingSystem.itemNames[ingredient]}" onerror="this.style.display='none'">
-                        <span class="ingredient-name">${CraftingSystem.itemNames[ingredient]}</span>
+                        <img class="ingredient-image" src="${getItemImage(ingredient)}" alt="${getItemDisplayName(ingredient)}" onerror="this.style.display='none'">
+                        <span class="ingredient-name">${getItemDisplayName(ingredient)}</span>
                     </div>
                     <span class="ingredient-count">${available} / ${required}</span>
                 </div>
@@ -309,7 +172,7 @@ function renderRecipes() {
                         </div>
                         <i class="fas fa-chevron-right"></i>
                         <div class="recipe-result">
-                            <span>+${recipe.result.quantity} ${CraftingSystem.itemNames[recipe.result.item]}</span>
+                            <span>+${recipe.result.quantity} ${getItemDisplayName(recipe.result.item)}</span>
                         </div>
                     </div>
                 </div>
@@ -336,9 +199,14 @@ function renderRecipes() {
 }
 
 function updateStationHeader() {
-    const station = CraftingSystem.stations[CraftingSystem.activeStation];
-    if (!station) return;
+    if (!CraftingSystem.activeStation || !CraftingSystem.stations[CraftingSystem.activeStation]) {
+        document.getElementById('station-name').textContent = 'Selecciona una Estación';
+        document.getElementById('station-description').textContent = 'Elige una estación para comenzar';
+        return;
+    }
 
+    const station = CraftingSystem.stations[CraftingSystem.activeStation];
+    
     document.getElementById('station-icon').className = `station-icon ${station.icon}`;
     document.getElementById('station-name').textContent = station.name;
     document.getElementById('station-description').textContent = station.description;
@@ -358,8 +226,16 @@ function selectStation(stationKey) {
 function startCrafting(recipeId) {
     if (CraftingSystem.isCrafting) return;
 
-    const recipe = CraftingSystem.stations[CraftingSystem.activeStation].recipes.find(r => r.id === recipeId);
-    if (!recipe || !canCraft(recipe)) return;
+    if (!CraftingSystem.activeStation || !CraftingSystem.recipes[CraftingSystem.activeStation]) {
+        showNotification('Error: Estación no válida', 'error');
+        return;
+    }
+
+    const recipe = CraftingSystem.recipes[CraftingSystem.activeStation].find(r => r.id === recipeId);
+    if (!recipe || !canCraft(recipe)) {
+        showNotification('No tienes los materiales necesarios', 'error');
+        return;
+    }
 
     // Enviar al servidor para validar y consumir items
     postToNUI('startCrafting', {
@@ -445,9 +321,19 @@ function cancelCrafting() {
 
 // ===== FUNCIONES DE UI =====
 function openCrafting(data = {}) {
-    CraftingSystem.isOpen = true;
+    // Cargar todos los datos del servidor
+    CraftingSystem.stations = data.stations || {};
+    CraftingSystem.recipes = data.recipes || {};
+    CraftingSystem.itemNames = data.itemNames || {};
+    CraftingSystem.itemRarity = data.itemRarity || {};
+    CraftingSystem.config = data.config || {};
     CraftingSystem.inventory = data.inventory || {};
     
+    // Establecer estación por defecto
+    const firstStation = Object.keys(CraftingSystem.stations)[0];
+    CraftingSystem.activeStation = data.activeStation || firstStation || null;
+    
+    CraftingSystem.isOpen = true;
     document.getElementById('crafting-container').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 
