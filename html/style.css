@@ -49,8 +49,6 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -61,7 +59,6 @@ body {
     width: 900px;
     height: 650px;
     background: linear-gradient(135deg, #111827 0%, #1f2937 50%, #111827 100%);
-    backdrop-filter: blur(16px);
     border: 1px solid rgba(107, 114, 128, 0.5);
     border-radius: 12px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
@@ -123,7 +120,6 @@ body {
 /* ===== HEADER ===== */
 .header {
     background: linear-gradient(90deg, rgba(55, 65, 81, 0.8) 0%, rgba(75, 85, 99, 0.8) 100%);
-    backdrop-filter: blur(8px);
     border-bottom: 1px solid rgba(107, 114, 128, 0.5);
     padding: 16px;
 }
@@ -189,7 +185,6 @@ body {
 .sidebar {
     width: 224px;
     background: linear-gradient(180deg, rgba(55, 65, 81, 0.4) 0%, rgba(75, 85, 99, 0.4) 100%);
-    backdrop-filter: blur(8px);
     border-right: 1px solid rgba(107, 114, 128, 0.3);
     padding: 16px;
 }
@@ -393,7 +388,6 @@ body {
     margin-bottom: 24px;
     padding: 16px;
     background: linear-gradient(90deg, rgba(154, 52, 18, 0.3) 0%, rgba(127, 29, 29, 0.3) 100%);
-    backdrop-filter: blur(8px);
     border-radius: 12px;
     border: 1px solid rgba(249, 115, 22, 0.3);
 }
