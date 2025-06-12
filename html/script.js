@@ -2,10 +2,11 @@
 const CraftingSystem = {
     isOpen: false,
     activeStation: null,
+    selectedRecipe: null,
+    quantity: 1,
     inventory: {},
     isCrafting: false,
     craftingProgress: 0,
-    craftingRecipe: null,
     craftingInterval: null,
     
     // Datos que vienen del servidor
@@ -25,14 +26,6 @@ function getItemImage(itemName) {
 
 function getItemDisplayName(itemName) {
     return CraftingSystem.itemNames[itemName] || itemName;
-}
-
-function canCraft(recipe) {
-    if (!recipe.ingredients) return false;
-    
-    return Object.entries(recipe.ingredients).every(
-        ([ingredient, required]) => (CraftingSystem.inventory[ingredient] || 0) >= required
-    );
 }
 
 function showNotification(message, type = 'success') {
@@ -66,56 +59,27 @@ function postToNUI(action, data = {}) {
 }
 
 // ===== FUNCIONES DE RENDERIZADO =====
-function renderStations() {
-    const stationsList = document.getElementById('stations-list');
-    stationsList.innerHTML = '';
+function renderStationTabs() {
+    const stationTabs = document.getElementById('station-tabs');
+    stationTabs.innerHTML = '';
 
     Object.entries(CraftingSystem.stations).forEach(([key, station]) => {
-        const stationBtn = document.createElement('button');
-        stationBtn.className = `station-btn ${CraftingSystem.activeStation === key ? 'active' : ''}`;
-        stationBtn.dataset.station = key;
+        const tab = document.createElement('button');
+        tab.className = `station-tab ${CraftingSystem.activeStation === key ? 'active' : ''}`;
+        tab.onclick = () => selectStation(key);
         
-        stationBtn.innerHTML = `
-            <div class="station-btn-icon">
-                <i class="${station.icon}"></i>
-            </div>
-            <div class="station-btn-info">
-                <div class="station-btn-name">${station.name}</div>
-                <div class="station-btn-desc">${station.description}</div>
-            </div>
+        tab.innerHTML = `
+            <i class="${station.icon}"></i>
+            <span>${station.name}</span>
         `;
 
-        stationBtn.addEventListener('click', () => selectStation(key));
-        stationsList.appendChild(stationBtn);
+        stationTabs.appendChild(tab);
     });
 }
 
-function renderInventory() {
-    const inventoryGrid = document.getElementById('inventory-grid');
-    inventoryGrid.innerHTML = '';
-
-    Object.entries(CraftingSystem.inventory)
-        .filter(([_, quantity]) => quantity > 0)
-        .forEach(([item, quantity]) => {
-            const itemDiv = document.createElement('div');
-            const rarity = CraftingSystem.itemRarity[item] || 'common';
-            itemDiv.className = `inventory-item ${rarity}`;
-            
-            itemDiv.innerHTML = `
-                <div class="item-info">
-                    <img class="item-image" src="${getItemImage(item)}" alt="${getItemDisplayName(item)}" onerror="this.style.display='none'">
-                    <span class="item-name">${getItemDisplayName(item)}</span>
-                </div>
-                <span class="item-quantity">${quantity}</span>
-            `;
-
-            inventoryGrid.appendChild(itemDiv);
-        });
-}
-
 function renderRecipes() {
-    const recipesContainer = document.getElementById('recipes-container');
-    recipesContainer.innerHTML = '';
+    const recipesGrid = document.getElementById('recipes-grid');
+    recipesGrid.innerHTML = '';
 
     if (!CraftingSystem.activeStation || !CraftingSystem.recipes[CraftingSystem.activeStation]) {
         return;
@@ -124,123 +88,210 @@ function renderRecipes() {
     const recipes = CraftingSystem.recipes[CraftingSystem.activeStation];
 
     recipes.forEach(recipe => {
-        const canCraftRecipe = canCraft(recipe);
-        const recipeCard = document.createElement('div');
-        recipeCard.className = `recipe-card ${canCraftRecipe && !CraftingSystem.isCrafting ? 'can-craft' : 'cannot-craft'}`;
-
-        // Generar estrellas de dificultad
-        const difficultyStars = Array.from({ length: 3 }, (_, i) => 
-            `<i class="difficulty-star fas fa-star ${i < recipe.difficulty ? 'filled' : 'empty'}"></i>`
-        ).join('');
-
-        // Generar ingredientes
-        const ingredientsList = Object.entries(recipe.ingredients).map(([ingredient, required]) => {
-            const available = CraftingSystem.inventory[ingredient] || 0;
-            const hasEnough = available >= required;
-            
-            return `
-                <div class="ingredient-item ${hasEnough ? 'available' : 'unavailable'}">
-                    <div class="ingredient-info">
-                        <img class="ingredient-image" src="${getItemImage(ingredient)}" alt="${getItemDisplayName(ingredient)}" onerror="this.style.display='none'">
-                        <span class="ingredient-name">${getItemDisplayName(ingredient)}</span>
-                    </div>
-                    <span class="ingredient-count">${available} / ${required}</span>
-                </div>
-            `;
-        }).join('');
-
-        // Generar efectos
-        const effectsList = recipe.effects.map(effect => `
-            <div class="effect-item">
-                <i class="effect-icon fas fa-bolt"></i>
-                <span>${effect}</span>
-            </div>
-        `).join('');
-
-        recipeCard.innerHTML = `
-            <div class="recipe-header">
-                <div class="recipe-info">
-                    <div class="recipe-title-row">
-                        <h3 class="recipe-name">${recipe.name}</h3>
-                        <div class="difficulty-stars">${difficultyStars}</div>
-                    </div>
-                    <p class="recipe-description">${recipe.description}</p>
-                    <div class="recipe-meta">
-                        <div class="recipe-time">
-                            <i class="fas fa-clock"></i>
-                            <span>${formatTime(recipe.time)}s</span>
-                        </div>
-                        <i class="fas fa-chevron-right"></i>
-                        <div class="recipe-result">
-                            <span>+${recipe.result.quantity} ${getItemDisplayName(recipe.result.item)}</span>
-                        </div>
-                    </div>
-                </div>
-                <button class="craft-btn ${canCraftRecipe && !CraftingSystem.isCrafting ? 'can-craft' : 'cannot-craft'}" 
-                        ${!canCraftRecipe || CraftingSystem.isCrafting ? 'disabled' : ''} 
-                        onclick="startCrafting('${recipe.id}')">
-                    ${CraftingSystem.isCrafting ? 'Fabricando...' : 'Crear'}
-                </button>
-            </div>
-            <div class="recipe-details">
-                <div class="ingredients-section">
-                    <h4>Ingredientes</h4>
-                    <div class="ingredients-list">${ingredientsList}</div>
-                </div>
-                <div class="effects-section">
-                    <h4>Efectos</h4>
-                    <div class="effects-list">${effectsList}</div>
-                </div>
-            </div>
+        const canCraft = canCraftRecipe(recipe);
+        const recipeItem = document.createElement('div');
+        recipeItem.className = `recipe-item ${!canCraft ? 'disabled' : ''}`;
+        recipeItem.onclick = () => selectRecipe(recipe);
+        
+        recipeItem.innerHTML = `
+            <img src="${getItemImage(recipe.result.item)}" alt="${recipe.name}" onerror="this.style.display='none'">
+            <div class="name">${recipe.name}</div>
         `;
 
-        recipesContainer.appendChild(recipeCard);
+        recipesGrid.appendChild(recipeItem);
     });
 }
 
-function updateStationHeader() {
+function renderSelectedRecipe() {
+    const selectedRecipeEl = document.getElementById('selected-recipe');
+    const ingredientsEl = document.getElementById('ingredients-required');
+    const quantityControls = document.getElementById('quantity-controls');
+    const resultDisplay = document.getElementById('result-display');
+    const craftBtn = document.getElementById('craft-btn');
+
+    if (!CraftingSystem.selectedRecipe) {
+        selectedRecipeEl.innerHTML = `
+            <div class="recipe-info">
+                <div class="recipe-icon">
+                    <i class="fas fa-question"></i>
+                </div>
+                <div class="recipe-details">
+                    <div class="recipe-name">Select Recipe</div>
+                    <div class="recipe-desc">Choose a recipe to start crafting</div>
+                </div>
+            </div>
+        `;
+        ingredientsEl.innerHTML = '';
+        quantityControls.style.display = 'none';
+        resultDisplay.innerHTML = `
+            <div class="result-placeholder">
+                <i class="fas fa-box-open"></i>
+                <span>Result will appear here</span>
+            </div>
+        `;
+        craftBtn.disabled = true;
+        return;
+    }
+
+    const recipe = CraftingSystem.selectedRecipe;
+    const canCraft = canCraftRecipe(recipe);
+
+    // Mostrar receta seleccionada
+    selectedRecipeEl.innerHTML = `
+        <div class="recipe-info">
+            <div class="recipe-icon">
+                <img src="${getItemImage(recipe.result.item)}" alt="${recipe.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><rect width=\"24\" height=\"24\" fill=\"%23666\"/></svg>'">
+            </div>
+            <div class="recipe-details">
+                <div class="recipe-name">${recipe.name}</div>
+                <div class="recipe-desc">${recipe.description}</div>
+            </div>
+        </div>
+    `;
+
+    // Mostrar ingredientes requeridos
+    ingredientsEl.innerHTML = '';
+    Object.entries(recipe.ingredients).forEach(([ingredient, required]) => {
+        const available = CraftingSystem.inventory[ingredient] || 0;
+        const hasEnough = available >= (required * CraftingSystem.quantity);
+        
+        const ingredientEl = document.createElement('div');
+        ingredientEl.className = `ingredient-item ${hasEnough ? 'available' : 'unavailable'}`;
+        ingredientEl.innerHTML = `
+            <img src="${getItemImage(ingredient)}" alt="${getItemDisplayName(ingredient)}" onerror="this.style.display='none'">
+            <span>${available}/${required * CraftingSystem.quantity}</span>
+        `;
+        ingredientsEl.appendChild(ingredientEl);
+    });
+
+    // Mostrar controles de cantidad
+    quantityControls.style.display = 'flex';
+    document.getElementById('quantity-display').textContent = CraftingSystem.quantity;
+
+    // Mostrar resultado
+    resultDisplay.innerHTML = `
+        <div class="result-item">
+            <img src="${getItemImage(recipe.result.item)}" alt="${recipe.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><rect width=\"24\" height=\"24\" fill=\"%23666\"/></svg>'">
+            <div class="name">${getItemDisplayName(recipe.result.item)}</div>
+            <div class="quantity">+${recipe.result.quantity * CraftingSystem.quantity}</div>
+        </div>
+    `;
+
+    // Actualizar botón de craft
+    craftBtn.disabled = !canCraft || CraftingSystem.isCrafting;
+}
+
+function renderInventory() {
+    const inventoryItems = document.getElementById('inventory-items');
+    inventoryItems.innerHTML = '';
+
+    Object.entries(CraftingSystem.inventory)
+        .filter(([_, quantity]) => quantity > 0)
+        .sort(([a], [b]) => getItemDisplayName(a).localeCompare(getItemDisplayName(b)))
+        .forEach(([item, quantity]) => {
+            const itemDiv = document.createElement('div');
+            const rarity = CraftingSystem.itemRarity[item] || 'common';
+            itemDiv.className = `inventory-item ${rarity}`;
+            itemDiv.title = getItemDisplayName(item);
+            
+            itemDiv.innerHTML = `
+                <img src="${getItemImage(item)}" alt="${getItemDisplayName(item)}" onerror="this.style.display='none'">
+                <div class="name">${getItemDisplayName(item)}</div>
+                <div class="quantity">${quantity}</div>
+            `;
+
+            inventoryItems.appendChild(itemDiv);
+        });
+}
+
+function updateStationDisplay() {
     if (!CraftingSystem.activeStation || !CraftingSystem.stations[CraftingSystem.activeStation]) {
-        document.getElementById('station-name').textContent = 'Selecciona una Estación';
-        document.getElementById('station-description').textContent = 'Elige una estación para comenzar';
+        document.getElementById('station-name').textContent = 'CRAFTING STATION';
+        document.getElementById('station-icon').className = 'station-icon fas fa-tools';
+        document.getElementById('station-display-icon').className = 'station-display-icon fas fa-tools';
         return;
     }
 
     const station = CraftingSystem.stations[CraftingSystem.activeStation];
-    
+    document.getElementById('station-name').textContent = station.name.toUpperCase();
     document.getElementById('station-icon').className = `station-icon ${station.icon}`;
-    document.getElementById('station-name').textContent = station.name;
-    document.getElementById('station-description').textContent = station.description;
-    
-    const iconContainer = document.querySelector('.station-icon-container');
-    iconContainer.style.background = station.color;
+    document.getElementById('station-display-icon').className = `station-display-icon ${station.icon}`;
 }
 
-// ===== FUNCIONES DE CRAFTING =====
+// ===== FUNCIONES DE LÓGICA =====
+function canCraftRecipe(recipe) {
+    if (!recipe.ingredients) return false;
+    
+    return Object.entries(recipe.ingredients).every(
+        ([ingredient, required]) => (CraftingSystem.inventory[ingredient] || 0) >= (required * CraftingSystem.quantity)
+    );
+}
+
 function selectStation(stationKey) {
     CraftingSystem.activeStation = stationKey;
-    renderStations();
-    updateStationHeader();
+    CraftingSystem.selectedRecipe = null;
+    CraftingSystem.quantity = 1;
+    
+    updateStationDisplay();
+    renderStationTabs();
     renderRecipes();
+    renderSelectedRecipe();
 }
 
-function startCrafting(recipeId) {
-    if (CraftingSystem.isCrafting) return;
+function selectRecipe(recipe) {
+    if (!canCraftRecipe(recipe)) return;
+    
+    // Highlight selected recipe
+    document.querySelectorAll('.recipe-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    event.currentTarget.classList.add('selected');
+    
+    CraftingSystem.selectedRecipe = recipe;
+    CraftingSystem.quantity = 1;
+    renderSelectedRecipe();
+}
 
-    if (!CraftingSystem.activeStation || !CraftingSystem.recipes[CraftingSystem.activeStation]) {
-        showNotification('Error: Estación no válida', 'error');
+function changeQuantity(delta) {
+    if (!CraftingSystem.selectedRecipe) return;
+    
+    const newQuantity = Math.max(1, CraftingSystem.quantity + delta);
+    const maxQuantity = Math.min(
+        99, 
+        ...Object.entries(CraftingSystem.selectedRecipe.ingredients).map(([ingredient, required]) => 
+            Math.floor((CraftingSystem.inventory[ingredient] || 0) / required)
+        )
+    );
+    
+    CraftingSystem.quantity = Math.min(newQuantity, maxQuantity);
+    renderSelectedRecipe();
+}
+
+function clearSelection() {
+    CraftingSystem.selectedRecipe = null;
+    CraftingSystem.quantity = 1;
+    
+    document.querySelectorAll('.recipe-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    
+    renderSelectedRecipe();
+}
+
+function startCrafting() {
+    if (!CraftingSystem.selectedRecipe || CraftingSystem.isCrafting) return;
+    
+    const recipe = CraftingSystem.selectedRecipe;
+    if (!canCraftRecipe(recipe)) {
+        showNotification('No tienes suficientes materiales', 'error');
         return;
     }
 
-    const recipe = CraftingSystem.recipes[CraftingSystem.activeStation].find(r => r.id === recipeId);
-    if (!recipe || !canCraft(recipe)) {
-        showNotification('No tienes los materiales necesarios', 'error');
-        return;
-    }
-
-    // Enviar al servidor para validar y consumir items
+    // Enviar al servidor para procesar
     postToNUI('startCrafting', {
         station: CraftingSystem.activeStation,
-        recipe: recipeId,
+        recipe: recipe.id,
+        quantity: CraftingSystem.quantity,
         ingredients: recipe.ingredients
     });
 }
@@ -248,11 +299,11 @@ function startCrafting(recipeId) {
 function beginCraftingProcess(recipe) {
     CraftingSystem.isCrafting = true;
     CraftingSystem.craftingProgress = 0;
-    CraftingSystem.craftingRecipe = recipe;
 
     // Mostrar UI de progreso
     const progressContainer = document.getElementById('crafting-progress');
     progressContainer.classList.remove('hidden');
+    document.querySelector('.station-display').style.display = 'none';
     
     document.getElementById('crafting-item-name').textContent = recipe.name;
     
@@ -265,32 +316,30 @@ function beginCraftingProcess(recipe) {
             return;
         }
         
-        updateCraftingProgress();
+        updateCraftingProgress(recipe);
     }, 100);
 
-    renderRecipes(); // Re-render para deshabilitar botones
+    renderSelectedRecipe();
 }
 
-function updateCraftingProgress() {
+function updateCraftingProgress(recipe) {
     const progressBar = document.getElementById('progress-bar');
-    const progressPercentage = document.getElementById('progress-percentage');
     const timeRemaining = document.getElementById('time-remaining');
     
     progressBar.style.width = `${CraftingSystem.craftingProgress}%`;
-    progressPercentage.textContent = `${Math.round(CraftingSystem.craftingProgress)}%`;
     
-    const remainingTime = formatTime(CraftingSystem.craftingRecipe.time * (1 - CraftingSystem.craftingProgress / 100));
-    timeRemaining.textContent = remainingTime;
+    const remainingTime = formatTime(recipe.time * (1 - CraftingSystem.craftingProgress / 100));
+    timeRemaining.textContent = `${remainingTime}s`;
 }
 
 function completeCrafting(recipe) {
     clearInterval(CraftingSystem.craftingInterval);
     CraftingSystem.isCrafting = false;
     CraftingSystem.craftingProgress = 0;
-    CraftingSystem.craftingRecipe = null;
 
     // Ocultar progreso
     document.getElementById('crafting-progress').classList.add('hidden');
+    document.querySelector('.station-display').style.display = 'flex';
 
     // Notificación
     showNotification(`¡${recipe.name} creado exitosamente!`, 'success');
@@ -299,10 +348,11 @@ function completeCrafting(recipe) {
     postToNUI('completeCrafting', {
         station: CraftingSystem.activeStation,
         recipe: recipe.id,
+        quantity: CraftingSystem.quantity,
         result: recipe.result
     });
 
-    renderRecipes();
+    renderSelectedRecipe();
 }
 
 function cancelCrafting() {
@@ -311,12 +361,36 @@ function cancelCrafting() {
     clearInterval(CraftingSystem.craftingInterval);
     CraftingSystem.isCrafting = false;
     CraftingSystem.craftingProgress = 0;
-    CraftingSystem.craftingRecipe = null;
 
     document.getElementById('crafting-progress').classList.add('hidden');
+    document.querySelector('.station-display').style.display = 'flex';
     
     postToNUI('cancelCrafting', {});
-    renderRecipes();
+    renderSelectedRecipe();
+}
+
+// ===== FUNCIONES DE INVENTARIO (AGREGAR/QUITAR ITEMS) =====
+function addItemToInventory(itemName, quantity) {
+    CraftingSystem.inventory[itemName] = (CraftingSystem.inventory[itemName] || 0) + quantity;
+    renderInventory();
+    renderSelectedRecipe(); // Re-render para actualizar disponibilidad
+}
+
+function removeItemFromInventory(itemName, quantity) {
+    if (CraftingSystem.inventory[itemName]) {
+        CraftingSystem.inventory[itemName] = Math.max(0, CraftingSystem.inventory[itemName] - quantity);
+        if (CraftingSystem.inventory[itemName] === 0) {
+            delete CraftingSystem.inventory[itemName];
+        }
+    }
+    renderInventory();
+    renderSelectedRecipe(); // Re-render para actualizar disponibilidad
+}
+
+function updateInventoryFromServer(inventory) {
+    CraftingSystem.inventory = inventory;
+    renderInventory();
+    renderSelectedRecipe();
 }
 
 // ===== FUNCIONES DE UI =====
@@ -337,10 +411,11 @@ function openCrafting(data = {}) {
     document.getElementById('crafting-container').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 
-    renderStations();
-    renderInventory();
-    updateStationHeader();
+    updateStationDisplay();
+    renderStationTabs();
     renderRecipes();
+    renderSelectedRecipe();
+    renderInventory();
 
     // Focus en la ventana para capturar teclas
     document.addEventListener('keydown', handleKeyPress);
@@ -356,13 +431,11 @@ function closeCrafting() {
     document.body.style.overflow = 'auto';
     document.removeEventListener('keydown', handleKeyPress);
 
-    postToNUI('closeCrafting', {});
-}
+    // Reset state
+    CraftingSystem.selectedRecipe = null;
+    CraftingSystem.quantity = 1;
 
-function updateInventory(inventory) {
-    CraftingSystem.inventory = inventory;
-    renderInventory();
-    renderRecipes(); // Re-render para actualizar disponibilidad
+    postToNUI('closeCrafting', {});
 }
 
 function handleKeyPress(event) {
@@ -398,7 +471,7 @@ window.addEventListener('message', function(event) {
             break;
 
         case 'updateInventory':
-            updateInventory(data.inventory);
+            updateInventoryFromServer(data.inventory);
             break;
 
         case 'startCraftingProcess':
@@ -412,9 +485,23 @@ window.addEventListener('message', function(event) {
         case 'craftingSuccess':
             showNotification(data.message, 'success');
             break;
+
+        case 'addItem':
+            addItemToInventory(data.item, data.quantity);
+            showNotification(`+${data.quantity} ${getItemDisplayName(data.item)}`, 'success');
+            break;
+
+        case 'removeItem':
+            removeItemFromInventory(data.item, data.quantity);
+            showNotification(`-${data.quantity} ${getItemDisplayName(data.item)}`, 'error');
+            break;
     }
 });
 
 // ===== FUNCIONES GLOBALES =====
 window.startCrafting = startCrafting;
 window.selectStation = selectStation;
+window.selectRecipe = selectRecipe;
+window.changeQuantity = changeQuantity;
+window.clearSelection = clearSelection;
+window.cancelCrafting = cancelCrafting;
